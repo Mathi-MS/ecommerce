@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Elowell Natural Store"
+version = "1.0.0"
+id = "artifacts/elowell-store"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20978
+
+[services.development]
+run = "pnpm --filter @workspace/elowell-store run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/elowell-store", "run", "build" ]
+publicDir = "artifacts/elowell-store/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20978"
+BASE_PATH = "/"

@@ -1,0 +1,23 @@
+packages:
+  "framer-motion": "For smooth organic page transitions and interactions"
+  "recharts": "For admin dashboard analytics charts"
+  "uuid": "For generating guest cart session IDs"
+  "@types/uuid": "Type definitions for uuid"
+  "zustand": "For global state management (auth and session)"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod schema validation in forms"
+
+images:
+  - path: "artifacts/elowell-store/public/images/hero-bg.png"
+    description: "A beautiful, premium aesthetic flat lay of natural organic wellness products like amber honey jars, green aloe vera leaves, and clear oil bottles on a warm earthy beige background with soft dappled sunlight and deep dramatic shadows"
+    aspect_ratio: "16:9"
+  - path: "artifacts/elowell-store/public/images/logo.png"
+    description: "Minimalist, elegant, and organic logo for a wellness brand named Elowell. Clean display typography with a subtle botanical leaf element, dark olive green on a transparent background"
+    aspect_ratio: "1:1"
+  - path: "artifacts/elowell-store/public/images/about-img.png"
+    description: "Soft focus, bright, airy lifestyle shot of hands gently applying natural botanical oil, warm sunlight, organic earthy tones, conveying purity and nature"
+    aspect_ratio: "4:3"
+
+notes:
+  - Auth is JWT based. Token is stored in localStorage and passed in headers via a custom wrapper hook.
+  - Guest cart uses a UUID stored in localStorage, passed as sessionId query/body param.
