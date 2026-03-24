@@ -1,19 +1,23 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
-import { productsTable } from "./products";
-import { usersTable } from "./users";
+import mongoose, { Schema, type Document } from "mongoose";
 
-export const reviewsTable = pgTable("reviews", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id").notNull().references(() => productsTable.id),
-  userId: integer("user_id").references(() => usersTable.id),
-  reviewerName: text("reviewer_name").notNull(),
-  rating: integer("rating").notNull(),
-  comment: text("comment").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export interface IReview extends Document {
+  productId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+}
 
-export const insertReviewSchema = createInsertSchema(reviewsTable).omit({ id: true, createdAt: true });
-export type InsertReview = z.infer<typeof insertReviewSchema>;
-export type Review = typeof reviewsTable.$inferSelect;
+const reviewSchema = new Schema<IReview>(
+  {
+    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewerName: { type: String, required: true },
+    rating: { type: Number, required: true },
+    comment: { type: String, required: true },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
+export const Review = mongoose.models.Review || mongoose.model<IReview>("Review", reviewSchema);

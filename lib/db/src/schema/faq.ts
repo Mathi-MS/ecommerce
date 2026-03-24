@@ -1,15 +1,19 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose, { Schema, type Document } from "mongoose";
 
-export const faqTable = pgTable("faq", {
-  id: serial("id").primaryKey(),
-  question: text("question").notNull(),
-  answer: text("answer").notNull(),
-  order: integer("order").notNull().default(0),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export interface IFaq extends Document {
+  question: string;
+  answer: string;
+  order: number;
+  createdAt: Date;
+}
 
-export const insertFaqSchema = createInsertSchema(faqTable).omit({ id: true, createdAt: true });
-export type InsertFaq = z.infer<typeof insertFaqSchema>;
-export type Faq = typeof faqTable.$inferSelect;
+const faqSchema = new Schema<IFaq>(
+  {
+    question: { type: String, required: true },
+    answer: { type: String, required: true },
+    order: { type: Number, default: 0 },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
+export const Faq = mongoose.models.Faq || mongoose.model<IFaq>("Faq", faqSchema);

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, categoriesTable } from "@workspace/db";
+import { connectDB, Category } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -9,9 +9,10 @@ function slugify(name: string): string {
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const categories = await db.select().from(categoriesTable);
-    res.json(categories.map((c) => ({
-      id: c.id,
+    await connectDB();
+    const categories = await Category.find();
+    res.json(categories.map((c: any) => ({
+      id: c._id,
       name: c.name,
       slug: c.slug,
       description: c.description,
@@ -25,16 +26,12 @@ router.get("/", async (req: Request, res: Response) => {
 
 router.post("/", async (req: Request, res: Response) => {
   try {
+    await connectDB();
     const { name, description, imageUrl } = req.body;
     const slug = slugify(name);
-    const [category] = await db.insert(categoriesTable).values({
-      name,
-      slug,
-      description: description || null,
-      imageUrl: imageUrl || null,
-    }).returning();
+    const category = await Category.create({ name, slug, description: description || undefined, imageUrl: imageUrl || undefined });
     res.status(201).json({
-      id: category.id,
+      id: category._id,
       name: category.name,
       slug: category.slug,
       description: category.description,

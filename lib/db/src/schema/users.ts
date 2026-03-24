@@ -1,17 +1,23 @@
-import { pgTable, text, serial, timestamp, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose, { Schema, type Document } from "mongoose";
 
-export const usersTable = pgTable("users", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: text("password").notNull(),
-  phone: varchar("phone", { length: 20 }),
-  role: varchar("role", { length: 20 }).notNull().default("customer"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role: string;
+  createdAt: Date;
+}
 
-export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof usersTable.$inferSelect;
+const userSchema = new Schema<IUser>(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    phone: { type: String },
+    role: { type: String, default: "customer" },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
+export const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
