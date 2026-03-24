@@ -1,19 +1,27 @@
-import { pgTable, text, serial, timestamp, varchar, numeric, integer, boolean } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose, { Schema, type Document } from "mongoose";
 
-export const referralCodesTable = pgTable("referral_codes", {
-  id: serial("id").primaryKey(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).notNull(),
-  discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }),
-  isActive: boolean("is_active").notNull().default(true),
-  usageCount: integer("usage_count").notNull().default(0),
-  maxUsage: integer("max_usage"),
-  productId: integer("product_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export interface IReferralCode extends Document {
+  code: string;
+  discountPercent: number;
+  discountAmount?: number;
+  isActive: boolean;
+  usageCount: number;
+  maxUsage?: number;
+  productId?: mongoose.Types.ObjectId;
+  createdAt: Date;
+}
 
-export const insertReferralCodeSchema = createInsertSchema(referralCodesTable).omit({ id: true, createdAt: true, usageCount: true });
-export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
-export type ReferralCode = typeof referralCodesTable.$inferSelect;
+const referralCodeSchema = new Schema<IReferralCode>(
+  {
+    code: { type: String, required: true, unique: true },
+    discountPercent: { type: Number, required: true },
+    discountAmount: { type: Number },
+    isActive: { type: Boolean, default: true },
+    usageCount: { type: Number, default: 0 },
+    maxUsage: { type: Number },
+    productId: { type: Schema.Types.ObjectId, ref: "Product" },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
+export const ReferralCode = mongoose.models.ReferralCode || mongoose.model<IReferralCode>("ReferralCode", referralCodeSchema);

@@ -1,43 +1,64 @@
-import { pgTable, text, serial, timestamp, varchar, numeric, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
-import { usersTable } from "./users";
+import mongoose, { Schema, type Document } from "mongoose";
 
-export const ordersTable = pgTable("orders", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => usersTable.id),
-  customerName: text("customer_name").notNull(),
-  customerEmail: varchar("customer_email", { length: 255 }).notNull(),
-  customerPhone: varchar("customer_phone", { length: 20 }).notNull(),
-  address: text("address").notNull(),
-  city: varchar("city", { length: 100 }).notNull(),
-  state: varchar("state", { length: 100 }).notNull(),
-  pincode: varchar("pincode", { length: 10 }).notNull(),
-  subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
-  discount: numeric("discount", { precision: 10, scale: 2 }).notNull().default("0"),
-  total: numeric("total", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"),
-  paymentStatus: varchar("payment_status", { length: 50 }).notNull().default("pending"),
-  paymentId: varchar("payment_id", { length: 255 }),
-  razorpayOrderId: varchar("razorpay_order_id", { length: 255 }),
-  referralCode: varchar("referral_code", { length: 50 }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+export interface IOrderItem extends Document {
+  orderId: mongoose.Types.ObjectId;
+  productId: mongoose.Types.ObjectId;
+  productName: string;
+  productImage: string;
+  price: number;
+  quantity: number;
+}
+
+export interface IOrder extends Document {
+  userId?: mongoose.Types.ObjectId;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  subtotal: number;
+  discount: number;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  paymentId?: string;
+  razorpayOrderId?: string;
+  referralCode?: string;
+  createdAt: Date;
+}
+
+const orderSchema = new Schema<IOrder>(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    customerName: { type: String, required: true },
+    customerEmail: { type: String, required: true },
+    customerPhone: { type: String, required: true },
+    address: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    pincode: { type: String, required: true },
+    subtotal: { type: Number, required: true },
+    discount: { type: Number, default: 0 },
+    total: { type: Number, required: true },
+    status: { type: String, default: "pending" },
+    paymentStatus: { type: String, default: "pending" },
+    paymentId: { type: String },
+    razorpayOrderId: { type: String },
+    referralCode: { type: String },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
+const orderItemSchema = new Schema<IOrderItem>({
+  orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
+  productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+  productName: { type: String, required: true },
+  productImage: { type: String, default: "" },
+  price: { type: Number, required: true },
+  quantity: { type: Number, required: true },
 });
 
-export const orderItemsTable = pgTable("order_items", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull().references(() => ordersTable.id),
-  productId: integer("product_id").notNull(),
-  productName: text("product_name").notNull(),
-  productImage: text("product_image").notNull().default(""),
-  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
-  quantity: integer("quantity").notNull(),
-});
-
-export const insertOrderSchema = createInsertSchema(ordersTable).omit({ id: true, createdAt: true });
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type Order = typeof ordersTable.$inferSelect;
-
-export const insertOrderItemSchema = createInsertSchema(orderItemsTable).omit({ id: true });
-export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
-export type OrderItem = typeof orderItemsTable.$inferSelect;
+export const Order = mongoose.models.Order || mongoose.model<IOrder>("Order", orderSchema);
+export const OrderItem = mongoose.models.OrderItem || mongoose.model<IOrderItem>("OrderItem", orderItemSchema);
