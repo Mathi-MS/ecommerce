@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useListFaq } from "@workspace/api-client-react";
+import { useListFaq } from "@/lib/api";
 import { ChevronDown } from "lucide-react";
 
 export default function FaqPage() {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useListOffers, useCreateOffer, useUpdateOffer, useDeleteOffer } from "@workspace/api-client-react";
+import { useListOffers, useCreateOffer, useUpdateOffer, useDeleteOffer } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

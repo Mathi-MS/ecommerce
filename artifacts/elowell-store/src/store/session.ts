@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { User } from '@workspace/api-client-react';
+import type { User } from '@/lib/api';
 
 interface SessionState {
   user: User | null;

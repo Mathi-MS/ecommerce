@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useGetCart, useUpdateCartItem, useRemoveCartItem, useValidateReferralCode } from "@workspace/api-client-react";
+import { useGetCart, useUpdateCartItem, useRemoveCartItem, useValidateReferralCode } from "@/lib/api";
 import { useSessionStore } from "@/store/session";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";

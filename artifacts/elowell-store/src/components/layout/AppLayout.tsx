@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingBag, User, Menu, X, Leaf } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
-import { useGetCart, useGetMe, useListOffers } from "@workspace/api-client-react";
+import { useGetCart, useGetMe, useListOffers } from "@/lib/api";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileDropdown } from "@/components/ProfileDropdown";

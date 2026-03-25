@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ArrowRight, Leaf, ShieldCheck, Truck } from "lucide-react";
-import { useListProducts, useListCategories } from "@workspace/api-client-react";
+import { useListProducts, useListCategories } from "@/lib/api";
 import { ProductCard } from "@/components/ProductCard";
 import { motion } from "framer-motion";
 

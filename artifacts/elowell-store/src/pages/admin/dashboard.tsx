@@ -1,5 +1,5 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useGetDashboardStats } from "@workspace/api-client-react";
+import { useGetDashboardStats } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
 import { Package, ShoppingCart, DollarSign, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

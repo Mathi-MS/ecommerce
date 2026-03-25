@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useGetProduct, useAddToCart, useGetProductReviews } from "@workspace/api-client-react";
+import { useGetProduct, useAddToCart, useGetProductReviews } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart, Star, Tag } from "lucide-react";
 import { useSessionStore } from "@/store/session";

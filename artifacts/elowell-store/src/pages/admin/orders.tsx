@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useUpdateOrderStatus } from "@workspace/api-client-react";
+import { useUpdateOrderStatus } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";

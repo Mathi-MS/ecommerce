@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useListFaq, useCreateFaqItem } from "@workspace/api-client-react";
+import { useListFaq, useCreateFaqItem } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

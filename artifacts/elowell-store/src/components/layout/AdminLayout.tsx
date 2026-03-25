@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, Package, ShoppingCart, Tag, Megaphone, HelpCircle, LogOut, ArrowLeft, Ticket } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
-import { useGetMe } from "@workspace/api-client-react";
+import { useGetMe } from "@/lib/api";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();

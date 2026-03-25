@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSessionStore } from "@/store/session";
-import { useGetCart, useCreateOrder } from "@workspace/api-client-react";
+import { useGetCart, useCreateOrder } from "@/lib/api";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

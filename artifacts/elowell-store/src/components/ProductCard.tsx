@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Star, ShoppingCart } from "lucide-react";
-import { Product, useAddToCart } from "@workspace/api-client-react";
+import { Product, useAddToCart } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { useSessionStore } from "@/store/session";
 import { useQueryClient } from "@tanstack/react-query";
