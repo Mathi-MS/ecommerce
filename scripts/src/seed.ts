@@ -9,8 +9,12 @@ async function seed() {
   const existingAdmin = await User.findOne({ email: "admin@elowell.com" });
   if (!existingAdmin) {
     const hashed = await bcrypt.hash("admin123", 10);
-    await User.create({ name: "Elowell Admin", email: "admin@elowell.com", password: hashed, role: "admin" });
+    await User.create({ name: "Elowell Admin", email: "admin@elowell.com", password: hashed, role: "admin", isVerified: true });
     console.log("Admin user created: admin@elowell.com / admin123");
+  } else if (!existingAdmin.isVerified) {
+    existingAdmin.isVerified = true;
+    await existingAdmin.save();
+    console.log("Admin user verified");
   }
 
   // Default customers
@@ -22,7 +26,7 @@ async function seed() {
     const existing = await User.findOne({ email: c.email });
     if (!existing) {
       const hashed = await bcrypt.hash(c.password, 10);
-      await User.create({ ...c, password: hashed, role: "customer" });
+      await User.create({ ...c, password: hashed, role: "customer", isVerified: true });
       console.log(`Customer created: ${c.email} / ${c.password}`);
     }
   }

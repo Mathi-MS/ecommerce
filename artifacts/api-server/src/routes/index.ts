@@ -7,6 +7,7 @@ import cart from "./cart";
 import orders from "./orders";
 import referrals from "./referrals";
 import faq from "./faq";
+import offers from "./offers";
 import admin from "./admin";
 import payment from "./payment";
 
@@ -20,6 +21,7 @@ router.use("/cart", cart);
 router.use("/orders", orders);
 router.use("/referrals", referrals);
 router.use("/faq", faq);
+router.use("/offers", offers);
 router.use("/admin", admin);
 router.use("/payment", payment);
 

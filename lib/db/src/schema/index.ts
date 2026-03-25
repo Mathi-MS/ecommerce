@@ -6,3 +6,4 @@ export * from "./cart.js";
 export * from "./orders.js";
 export * from "./referrals.js";
 export * from "./faq.js";
+export * from "./offers.js";

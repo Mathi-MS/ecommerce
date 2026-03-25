@@ -492,6 +492,84 @@ paths:
         "401":
           description: Not authenticated
 
+  /auth/google-signin:
+    post:
+      operationId: googleSignIn
+      tags: [auth]
+      summary: Google SSO sign-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                credential:
+                  type: string
+              required: [credential]
+      responses:
+        "200":
+          description: Sign-in success or OTP required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/AuthResponse"
+                  - type: object
+                    properties:
+                      needsOTP:
+                        type: boolean
+                      email:
+                        type: string
+                      message:
+                        type: string
+                    required: [needsOTP, email, message]
+
+  /auth/profile:
+    put:
+      operationId: updateProfile
+      tags: [auth]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  message:
+                    type: string
+                required: [user, message]
+
+  /orders/user:
+    get:
+      operationId: getUserOrders
+      tags: [orders]
+      summary: Get current user's orders
+      responses:
+        "200":
+          description: User orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
   /referrals/validate:
     post:
       operationId: validateReferralCode
@@ -580,6 +658,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FaqItem"
+
+  /referrals/{id}:
+    delete:
+      operationId: deleteReferralCode
+      tags: [referrals, admin]
+      summary: Delete a referral code (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required: [success]
 
   /admin/dashboard:
     get:
@@ -1082,8 +1183,10 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: string
         code:
+          type: string
+        couponName:
           type: string
         discountPercent:
           type: number
@@ -1097,17 +1200,18 @@ components:
         maxUsage:
           type: number
           nullable: true
-        productId:
-          type: number
-          nullable: true
+        productIds:
+          type: array
+          items:
+            type: string
         createdAt:
           type: string
-      required: [id, code, discountPercent, isActive, usageCount, createdAt]
+      required: [id, code, couponName, discountPercent, isActive, usageCount, createdAt]
 
     CreateReferralCodeInput:
       type: object
       properties:
-        code:
+        couponName:
           type: string
         discountPercent:
           type: number
@@ -1117,10 +1221,11 @@ components:
         maxUsage:
           type: number
           nullable: true
-        productId:
-          type: number
-          nullable: true
-      required: [code, discountPercent]
+        productIds:
+          type: array
+          items:
+            type: string
+      required: [couponName, discountPercent]
 
     FaqItem:
       type: object

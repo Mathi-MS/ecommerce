@@ -1,7 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import jwt from "jsonwebtoken";
 import { connectDB, Order, OrderItem, CartItem, Product, ReferralCode } from "@workspace/db";
 
 const router: IRouter = Router();
+const JWT_SECRET = process.env.JWT_SECRET || "elowell-secret-key-2024";
 
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
@@ -37,10 +39,45 @@ async function buildOrderResponse(order: any) {
   };
 }
 
+router.get("/user", async (req: Request, res: Response) => {
+  try {
+    await connectDB();
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+    const token = authHeader.slice(7);
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const orders = await Order.find({ userId: decoded.userId }).sort({ createdAt: -1 });
+    res.json(await Promise.all(orders.map(buildOrderResponse)));
+  } catch (err) {
+    req.log.error({ err }, "Get user orders error");
+    res.status(500).json({ error: "Failed to fetch user orders" });
+  }
+});
+
 router.get("/", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const { status, search, userId } = req.query;
+    const filter: any = {};
+    
+    // If userId is provided, filter by user (for customer order history)
+    if (userId) {
+      filter.userId = userId;
+    }
+    
+    if (status && status !== "all") filter.status = status;
+    if (search) {
+      const re = new RegExp(String(search), "i");
+      filter.$or = [
+        { customerName: re },
+        { customerEmail: re },
+        { customerPhone: re },
+      ];
+    }
+    const orders = await Order.find(filter).sort({ createdAt: -1 });
     res.json(await Promise.all(orders.map(buildOrderResponse)));
   } catch (err) {
     req.log.error({ err }, "List orders error");
@@ -53,7 +90,9 @@ router.post("/", async (req: Request, res: Response) => {
     await connectDB();
     const { customerName, customerEmail, customerPhone, address, city, state, pincode, sessionId, userId, referralCode } = req.body;
 
-    const cartItems = await CartItem.find({ sessionId }).populate("productId");
+    // Get cart items based on user or session
+    const cartFilter: any = userId ? { userId } : { sessionId };
+    const cartItems = await CartItem.find(cartFilter).populate("productId");
     if (cartItems.length === 0) { res.status(400).json({ error: "Cart is empty" }); return; }
 
     let subtotal = 0;
@@ -86,6 +125,18 @@ router.post("/", async (req: Request, res: Response) => {
 
     for (const item of cartItems as any[]) {
       const p = item.productId;
+      
+      // Check stock availability
+      if (p.stock < item.quantity) {
+        res.status(400).json({ error: `Insufficient stock for ${p.name}. Available: ${p.stock}, Requested: ${item.quantity}` });
+        return;
+      }
+      
+      // Reduce stock
+      await Product.findByIdAndUpdate(p._id, {
+        $inc: { stock: -item.quantity }
+      });
+      
       await OrderItem.create({
         orderId: order._id,
         productId: p._id,
@@ -96,7 +147,8 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    await CartItem.deleteMany({ sessionId });
+    // Clear cart after successful order
+    await CartItem.deleteMany(cartFilter);
 
     let razorpayOrder = null;
     if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {

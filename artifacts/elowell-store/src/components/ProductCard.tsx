@@ -12,9 +12,13 @@ export function ProductCard({ product }: { product: Product }) {
   const queryClient = useQueryClient();
   const cartSessionId = useSessionStore(s => s.cartSessionId);
   const addToCartMutation = useAddToCart();
+  
+  const isOutOfStock = product.stock === 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // prevent link navigation
+    e.preventDefault();
+    if (isOutOfStock) return;
+    
     addToCartMutation.mutate({
       data: {
         productId: product.id,
@@ -27,6 +31,19 @@ export function ProductCard({ product }: { product: Product }) {
         toast({
           title: "Added to Cart",
           description: `${product.name} has been added to your cart.`
+        });
+      },
+      onError: (error: any) => {
+        console.log(error, "error details");
+        let errorMessage = error.message || "Failed to add to cart";
+        // Remove "HTTP 400 Bad Request: " prefix if present
+        if (errorMessage.includes("HTTP 400 Bad Request: ")) {
+          errorMessage = errorMessage.replace("HTTP 400 Bad Request: ", "");
+        }
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
         });
       }
     });
@@ -52,14 +69,20 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           )}
           
+          {isOutOfStock && (
+            <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+              Out of Stock
+            </div>
+          )}
+          
           <div className="absolute bottom-4 left-0 right-0 px-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <Button 
               onClick={handleAddToCart}
-              disabled={addToCartMutation.isPending}
-              className="w-full shadow-lg gap-2 rounded-xl"
+              disabled={addToCartMutation.isPending || isOutOfStock}
+              className="w-full shadow-lg gap-2 rounded-xl disabled:opacity-50"
             >
               <ShoppingCart className="h-4 w-4" />
-              {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
+              {isOutOfStock ? "Out of Stock" : addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
             </Button>
           </div>
         </div>
@@ -79,6 +102,17 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">{product.shortDescription}</p>
+          
+          {/* Stock indicator */}
+          <div className="mb-3">
+            {product.stock === 0 ? (
+              <span className="text-xs font-medium text-destructive">Out of Stock</span>
+            ) : product.stock <= 5 ? (
+              <span className="text-xs font-medium text-orange-600">Only {product.stock} left</span>
+            ) : (
+              <span className="text-xs font-medium text-green-600">{product.stock} in stock</span>
+            )}
+          </div>
           
           <div className="flex items-center gap-1 mt-auto">
             <div className="flex text-secondary">

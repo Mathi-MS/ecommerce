@@ -2,24 +2,26 @@ import mongoose, { Schema, type Document } from "mongoose";
 
 export interface IReferralCode extends Document {
   code: string;
+  couponName: string;
   discountPercent: number;
   discountAmount?: number;
   isActive: boolean;
   usageCount: number;
   maxUsage?: number;
-  productId?: mongoose.Types.ObjectId;
+  productIds: mongoose.Types.ObjectId[];
   createdAt: Date;
 }
 
 const referralCodeSchema = new Schema<IReferralCode>(
   {
     code: { type: String, required: true, unique: true },
+    couponName: { type: String, required: true },
     discountPercent: { type: Number, required: true },
     discountAmount: { type: Number },
     isActive: { type: Boolean, default: true },
     usageCount: { type: Number, default: 0 },
     maxUsage: { type: Number },
-    productId: { type: Schema.Types.ObjectId, ref: "Product" },
+    productIds: { type: [Schema.Types.ObjectId], ref: "Product", default: [] },
   },
   { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );

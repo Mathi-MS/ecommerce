@@ -2323,6 +2323,111 @@ export const useCreateFaqItem = <
   return useMutation(getCreateFaqItemMutationOptions(options));
 };
 
+// ---- Offers ----
+
+export type OfferItem = { id: string; text: string; status: string; createdAt: string };
+
+export const getListOffersUrl = () => `/api/offers`;
+
+export const listOffers = async (
+  options?: SecondParameter<typeof customFetch>,
+): Promise<OfferItem[]> =>
+  customFetch<OfferItem[]>(getListOffersUrl(), { ...options, method: "GET" });
+
+export const getListOffersQueryKey = () => [`/api/offers`] as const;
+
+export const getListOffersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOffers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listOffers>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListOffersQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listOffers>>> = ({ signal }) =>
+    listOffers({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOffers>>, TError, TData
+  > & { queryKey: QueryKey };
+};
+
+export function useListOffers<
+  TData = Awaited<ReturnType<typeof listOffers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listOffers>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOffersQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const createOffer = async (
+  data: { text: string; status: string },
+  options?: SecondParameter<typeof customFetch>,
+): Promise<OfferItem> =>
+  customFetch<OfferItem>(`/api/offers`, {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(options as RequestInit)?.headers },
+    body: JSON.stringify(data),
+  });
+
+export const useCreateOffer = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createOffer>>, TError, { data: { text: string; status: string } }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) =>
+  useMutation({
+    mutationFn: ({ data }: { data: { text: string; status: string } }) =>
+      createOffer(data, options?.request),
+    ...options?.mutation,
+  });
+
+export const updateOffer = async (
+  id: string,
+  data: { text?: string; status?: string },
+  options?: SecondParameter<typeof customFetch>,
+): Promise<OfferItem> =>
+  customFetch<OfferItem>(`/api/offers/${id}`, {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...(options as RequestInit)?.headers },
+    body: JSON.stringify(data),
+  });
+
+export const useUpdateOffer = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateOffer>>, TError, { id: string; data: { text?: string; status?: string } }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) =>
+  useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { text?: string; status?: string } }) =>
+      updateOffer(id, data, options?.request),
+    ...options?.mutation,
+  });
+
+export const deleteOffer = async (
+  id: string,
+  options?: SecondParameter<typeof customFetch>,
+): Promise<{ success: boolean }> =>
+  customFetch<{ success: boolean }>(`/api/offers/${id}`, { ...options, method: "DELETE" });
+
+export const useDeleteOffer = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteOffer>>, TError, string, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) =>
+  useMutation({
+    mutationFn: (id: string) => deleteOffer(id, options?.request),
+    ...options?.mutation,
+  });
+
 /**
  * @summary Get admin dashboard stats
  */

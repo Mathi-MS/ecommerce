@@ -11,13 +11,10 @@ import { ProductCard } from "@/components/ProductCard";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const productId = parseInt(id, 10);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-
-  const { data: product, isLoading } = useGetProduct(productId);
-  const { data: reviews } = useGetProductReviews(productId);
-  
+  const { data: product, isLoading } = useGetProduct(id as any);
+  const { data: reviews } = useGetProductReviews(id as any);
   const cartSessionId = useSessionStore(s => s.cartSessionId);
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();
@@ -34,6 +31,8 @@ export default function ProductDetailPage() {
   const images = product.images?.length ? product.images : ['https://images.unsplash.com/photo-1611078449911-3771bd9a691b?w=800&q=80'];
 
   const handleAddToCart = () => {
+    if (product.stock === 0) return;
+    
     addToCartMutation.mutate({
       data: {
         productId: product.id,
@@ -46,6 +45,19 @@ export default function ProductDetailPage() {
         toast({
           title: "Added to Cart",
           description: `${quantity}x ${product.name} added to your cart.`
+        });
+      },
+      onError: (error: any) => {
+        console.log(error,"wedwed");
+        let errorMessage = error.message || "Failed to add to cart";
+        // Remove "HTTP 400 Bad Request: " prefix if present
+        if (errorMessage.includes("HTTP 400 Bad Request: ")) {
+          errorMessage = errorMessage.replace("HTTP 400 Bad Request: ", "");
+        }
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
         });
       }
     });
@@ -98,7 +110,7 @@ export default function ProductDetailPage() {
                 <div className="flex items-end gap-3">
                   <span className="text-4xl font-bold text-primary">${product.discountPrice.toFixed(2)}</span>
                   <span className="text-xl text-muted-foreground line-through mb-1">${product.price.toFixed(2)}</span>
-                  <span className="text-sm font-bold text-secondary bg-secondary/10 px-2 py-1 rounded-md mb-1 ml-2">Save ${(product.price - product.discountPrice).toFixed(2)}</span>
+                  <span className="text-sm font-bold text-secondary bg-secondary/10 px-2 py-1 rounded-md mb-1 ml-2">{Math.round((product.price - product.discountPrice) / product.price * 100)}% OFF</span>
                 </div>
               ) : (
                 <span className="text-4xl font-bold text-foreground">${product.price.toFixed(2)}</span>
@@ -146,7 +158,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="text-sm text-muted-foreground space-y-2">
-              <p><strong className="text-foreground">Availability:</strong> {product.stock > 0 ? <span className="text-primary">{product.stock} in stock</span> : <span className="text-destructive">Out of stock</span>}</p>
+              <p><strong className="text-foreground">Availability:</strong> {product.stock > 0 ? (product.stock <= 5 ? <span className="text-orange-600">{product.stock} left (Low Stock)</span> : <span className="text-primary">{product.stock} in stock</span>) : <span className="text-destructive">Out of stock</span>}</p>
               <p><strong className="text-foreground">SKU:</strong> ELO-{product.id.toString().padStart(4, '0')}</p>
             </div>
           </div>

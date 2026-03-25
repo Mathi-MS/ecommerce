@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ShoppingCart, Tag, LogOut, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Tag, Megaphone, HelpCircle, LogOut, ArrowLeft, Ticket } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
 import { useGetMe } from "@workspace/api-client-react";
 
@@ -32,6 +32,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
     { name: 'Referrals', path: '/admin/referrals', icon: Tag },
+    { name: 'Coupons', path: '/admin/coupons', icon: Ticket },
+    { name: 'Offers', path: '/admin/offers', icon: Megaphone },
+    { name: 'FAQ', path: '/admin/faq', icon: HelpCircle },
   ];
 
   return (

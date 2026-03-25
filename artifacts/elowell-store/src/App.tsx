@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import OrderHistory from "./pages/orders";
+
 // Import pages
 import Home from "./pages/home";
 import ProductsIndex from "./pages/products/index";
@@ -14,10 +16,14 @@ import Faq from "./pages/faq";
 import OrderSuccess from "./pages/order-success";
 import NotFound from "./pages/not-found";
 
+import AdminCoupons from "./pages/admin/coupons";
+
 // Admin pages
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminProducts from "./pages/admin/products";
 import AdminOrders from "./pages/admin/orders";
+import AdminOffers from "./pages/admin/offers";
+import AdminFaq from "./pages/admin/faq";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +38,7 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <Route path="/faq" component={Faq} />
       <Route path="/order-success" component={OrderSuccess} />
+      <Route path="/orders" component={OrderHistory} />
       
       {/* Admin routes */}
       <Route path="/admin">
@@ -41,6 +48,9 @@ function Router() {
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/orders" component={AdminOrders} />
+      <Route path="/admin/offers" component={AdminOffers} />
+      <Route path="/admin/faq" component={AdminFaq} />
+      <Route path="/admin/coupons" component={AdminCoupons} />
       <Route path="/admin/referrals" component={AdminDashboard} />
 
       <Route component={NotFound} />

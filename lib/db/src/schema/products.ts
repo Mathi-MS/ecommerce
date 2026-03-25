@@ -8,8 +8,10 @@ export interface IProduct extends Document {
   price: number;
   discountPrice?: number;
   categoryId?: mongoose.Types.ObjectId;
+  mainImage: string;
   images: string[];
   stock: number;
+  order: number;
   featured: boolean;
   referralCode?: string;
   createdAt: Date;
@@ -24,8 +26,10 @@ const productSchema = new Schema<IProduct>(
     price: { type: Number, required: true },
     discountPrice: { type: Number },
     categoryId: { type: Schema.Types.ObjectId, ref: "Category" },
+    mainImage: { type: String, default: "" },
     images: { type: [String], default: [] },
     stock: { type: Number, default: 0 },
+    order: { type: Number, default: 0 },
     featured: { type: Boolean, default: false },
     referralCode: { type: String },
   },
