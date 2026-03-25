@@ -18,8 +18,20 @@ export const useSessionStore = create<SessionState>((set) => {
     localStorage.setItem('cartSessionId', cartSessionId);
   }
 
+  // Initialize user from localStorage
+  let initialUser = null;
+  try {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      initialUser = JSON.parse(storedUser);
+    }
+  } catch (error) {
+    console.error('Failed to parse stored user:', error);
+    localStorage.removeItem('user');
+  }
+
   return {
-    user: null,
+    user: initialUser,
     token: localStorage.getItem('token'),
     cartSessionId,
     setUser: (user) => set({ user }),
@@ -30,6 +42,7 @@ export const useSessionStore = create<SessionState>((set) => {
     },
     logout: () => {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       set({ user: null, token: null });
     }
   };

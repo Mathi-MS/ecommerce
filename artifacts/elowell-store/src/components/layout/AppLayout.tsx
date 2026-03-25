@@ -2,10 +2,10 @@ import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingBag, User, Menu, X, Leaf } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
-import { useGetCart, useGetMe } from "@workspace/api-client-react";
+import { useGetCart, useGetMe, useListOffers } from "@workspace/api-client-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { ProfileDropdown } from "@/components/ProfileDropdown";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -16,17 +16,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   // Rehydrate user
   const { data: userData, isError } = useGetMe({
-    query: { enabled: !!token, retry: false },
+    query: { enabled: !!token && !user, retry: false }, // Only fetch if we have token but no user
     ...apiOpts,
   });
 
   useEffect(() => {
-    if (userData) setUser(userData);
-    if (isError) logout();
-  }, [userData, isError, setUser, logout]);
+    if (userData && !user) setUser(userData); // Only set user if we don't already have one
+    if (isError && token) logout(); // Only logout if we had a token but API failed
+  }, [userData, isError, setUser, logout, user, token]);
 
   // Fetch cart
   const { data: cart } = useGetCart({ sessionId: cartSessionId });
+
+  // Fetch active offer for banner
+  const { data: offers } = useListOffers(apiOpts);
+  const activeOffer = Array.isArray(offers) ? offers.find((o: any) => o.status === "active") : null;
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -36,9 +40,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Banner */}
-      <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-medium tracking-wide">
-        Free shipping on all orders over $50. Pure Nature, Delivered.
-      </div>
+      {activeOffer && (
+        <div className="bg-primary text-primary-foreground text-center py-3 text-sm font-medium tracking-wide">
+          {activeOffer.text}
+        </div>
+      )}
 
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
@@ -59,10 +65,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href={user ? "/auth" : "/auth"} className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <User className="h-5 w-5" />
-              <span>{user ? user.name.split(' ')[0] : 'Sign In'}</span>
-            </Link>
+            <ProfileDropdown />
             
             <Link href="/cart" className="relative p-2 text-foreground hover:text-primary transition-colors">
               <ShoppingBag className="h-6 w-6" />
