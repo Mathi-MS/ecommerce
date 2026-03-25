@@ -13,7 +13,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
   server: {
@@ -21,11 +21,11 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: process.env.VITE_API_BASE_URL || "http://localhost:3000",
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://localhost:3000",
+        target: process.env.VITE_API_BASE_URL || "http://localhost:3000",
         changeOrigin: true,
       },
     },
