@@ -169,7 +169,7 @@ export const useGetCart = (params?: any) => {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       
-      const response = await fetch(`/api/cart?sessionId=${cartSessionId}`, { headers });
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart?sessionId=${cartSessionId}`, { headers });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
       const cart = await response.json();
@@ -517,7 +517,7 @@ export const useGetProduct = (id?: string) => {
     
     try {
       setIsLoading(true);
-      const product = await apiCall(`/api/products/${id}`);
+      const product = await apiCall(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
       setData(product);
     } catch (error) {
       console.error('Failed to fetch product:', error);
@@ -547,7 +547,7 @@ export const useGetProductReviews = (id?: string) => {
     
     try {
       setIsLoading(true);
-      const reviews = await apiCall(`/api/products/${id}/reviews`);
+      const reviews = await apiCall(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}/reviews`);
       setData(reviews);
     } catch (error) {
       console.error('Failed to fetch reviews:', error);

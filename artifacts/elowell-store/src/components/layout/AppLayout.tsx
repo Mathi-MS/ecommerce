@@ -34,7 +34,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       
-      const response = await fetch(`/api/cart?sessionId=${cartSessionId}`, { headers });
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart?sessionId=${cartSessionId}`, { headers });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
       return response.json();

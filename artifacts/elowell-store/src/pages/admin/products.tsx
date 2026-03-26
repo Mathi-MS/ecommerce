@@ -16,7 +16,7 @@ async function uploadImage(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
-      const res = await fetch("/api/products/upload", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ base64, filename: file.name }),
@@ -113,8 +113,8 @@ export default function AdminProducts() {
         mainImage: form.mainImage, images: form.images, featured: false,
       };
       const response = editing 
-        ? await fetch(`/api/products/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify(body) })
-        : await fetch("/api/products", { method: "POST", headers: authHeaders, body: JSON.stringify(body) });
+        ? await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify(body) })
+        : await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`, { method: "POST", headers: authHeaders, body: JSON.stringify(body) });
       
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -126,7 +126,7 @@ export default function AdminProducts() {
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
-      const response = await fetch(`/api/products/${id}`, { method: "DELETE", headers: authHeaders });
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`, { method: "DELETE", headers: authHeaders });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     } catch (error) {

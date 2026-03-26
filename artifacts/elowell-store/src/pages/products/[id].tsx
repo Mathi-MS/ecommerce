@@ -17,7 +17,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useQuery({
     queryKey: [`/api/products/${id}`],
     queryFn: async () => {
-      const response = await fetch(`/api/products/${id}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     },
