@@ -132,13 +132,13 @@ export default function CartPage() {
     
     // Update local cart immediately
     if (localCart) {
-      const updatedItems = localCart.items.map(item => 
+      const updatedItems = localCart.items.map((item: any) => 
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       );
-      const updatedTotal = updatedItems.reduce((sum, item) => 
+      const updatedTotal = updatedItems.reduce((sum: number, item: any) => 
         sum + (item.discountPrice || item.price || 0) * item.quantity, 0
       );
-      const updatedItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const updatedItemCount = updatedItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
       
       setLocalCart({
         ...localCart,
@@ -155,11 +155,11 @@ export default function CartPage() {
   const handleRemove = (itemId: string) => {
     // Update local cart immediately
     if (localCart) {
-      const updatedItems = localCart.items.filter(item => item.id !== itemId);
-      const updatedTotal = updatedItems.reduce((sum, item) => 
+      const updatedItems = localCart.items.filter((item: any) => item.id !== itemId);
+      const updatedTotal = updatedItems.reduce((sum: number, item: any) => 
         sum + (item.discountPrice || item.price || 0) * item.quantity, 0
       );
-      const updatedItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const updatedItemCount = updatedItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
       
       setLocalCart({
         ...localCart,
@@ -223,7 +223,7 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
                 <ul className="divide-y divide-border">
-                  {displayCart.items.map(item => (
+                  {displayCart.items.map((item: any) => (
                     <li key={item.id} className="p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                       <img src={item.productImage || 'https://via.placeholder.com/150'} alt={item.productName || 'Product'} className="w-24 h-24 rounded-xl object-cover bg-muted/50 border border-border/50 shrink-0" />
                       <div className="flex-1 text-center sm:text-left">

@@ -95,7 +95,7 @@ export default function ProductDetailPage() {
             </div>
             {images.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
-                {images.map((img, idx) => (
+                {images.map((img: string, idx: number) => (
                   <button 
                     key={idx} 
                     onClick={() => setActiveImage(idx)}
@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
           <div className="lg:col-span-2">
             <h2 className="text-3xl font-bold font-display mb-6">Product Details</h2>
             <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none text-muted-foreground">
-              {product.description.split('\n').map((paragraph, idx) => (
+              {product.description.split('\n').map((paragraph: string, idx: number) => (
                 <p key={idx} className="mb-4">{paragraph}</p>
               ))}
             </div>
@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
             <h2 className="text-3xl font-bold font-display mb-6">Reviews</h2>
             {reviews?.length ? (
               <div className="space-y-6">
-                {reviews.map(review => (
+                {reviews.map((review: any) => (
                   <div key={review.id} className="bg-card p-6 rounded-2xl border border-border/50 shadow-sm">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex text-secondary">
@@ -222,7 +222,7 @@ export default function ProductDetailPage() {
           <div>
             <h2 className="text-3xl font-bold font-display mb-8 text-center">You May Also Like</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {product.relatedProducts.slice(0, 4).map(p => (
+              {product.relatedProducts.slice(0, 4).map((p: any) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
