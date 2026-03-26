@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { connectDB, Product, Review, Category, ReferralCode } from "@workspace/db";
+import { connectDB, Product, Review, Category, ReferralCode } from "../db/index.js";
 import path from "path";
 import fs from "fs";
 

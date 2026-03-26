@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import OrderHistory from "./pages/orders";
+import OrdersDemo from "./pages/orders-demo";
 
 // Import pages
 import Home from "./pages/home";
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/faq" component={Faq} />
       <Route path="/order-success" component={OrderSuccess} />
       <Route path="/orders" component={OrderHistory} />
+      <Route path="/orders-demo" component={OrdersDemo} />
       
       {/* Admin routes */}
       <Route path="/admin">

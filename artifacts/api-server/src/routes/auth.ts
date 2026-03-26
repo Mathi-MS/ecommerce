@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import { connectDB, User } from "@workspace/db";
+import { connectDB, User } from "../db/index.js";
 import crypto from "crypto";
 
 const router: IRouter = Router();

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { connectDB, Order } from "@workspace/db";
+import { connectDB, Order } from "../db/index.js";
 import crypto from "crypto";
 
 const router: IRouter = Router();

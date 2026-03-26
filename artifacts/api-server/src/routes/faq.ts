@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { connectDB, Faq } from "@workspace/db";
+import { connectDB, Faq } from "../db/index.js";
 
 const router: IRouter = Router();
 

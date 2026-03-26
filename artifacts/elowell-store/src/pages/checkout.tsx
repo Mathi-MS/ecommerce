@@ -50,7 +50,7 @@ export default function CheckoutPage() {
         userId: user?.id,
       }
     }, {
-      onSuccess: (res) => {
+      onSuccess: (res: any) => {
         // Mocking Razorpay flow completion
         toast({ title: "Order Placed Successfully!" });
         setLocation(`/order-success?id=${res.order.id}`);
@@ -137,12 +137,12 @@ export default function CheckoutPage() {
                   <li key={item.id} className="py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden relative border border-border/50">
-                        <img src={item.productImage || 'https://via.placeholder.com/150'} alt={item.productName} className="w-full h-full object-cover" />
+                        <img src={item.product?.images?.[0] || 'https://via.placeholder.com/150'} alt={item.product?.name || 'Product'} className="w-full h-full object-cover" />
                         <div className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-card">{item.quantity}</div>
                       </div>
-                      <span className="font-medium text-sm">{item.productName}</span>
+                      <span className="font-medium text-sm">{item.product?.name || 'Product'}</span>
                     </div>
-                    <span className="font-bold text-sm">${((item.discountPrice || item.price) * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-sm">${((item.product?.discountPrice || item.product?.price || 0) * item.quantity).toFixed(2)}</span>
                   </li>
                 ))}
               </ul>

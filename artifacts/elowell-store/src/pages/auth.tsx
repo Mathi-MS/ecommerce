@@ -157,6 +157,7 @@ export default function AuthPage() {
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [googleLoaded, step, activeTab]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -315,6 +316,27 @@ export default function AuthPage() {
       toast({ title: "Error", description: "Failed to resend OTP", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = (): void => {
+    const email = prompt("Enter your email for password reset:");
+    if (email) {
+      fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      }).then(res => res.json()).then(data => {
+        if (data.message) {
+          setEmail(email);
+          setStep('otp');
+          toast({ title: "Success", description: data.message });
+        }
+        return data;
+      }).catch(error => {
+        console.error('Password reset error:', error);
+        return null;
+      });
     }
   };
 
@@ -504,22 +526,7 @@ export default function AuthPage() {
                     type="button"
                     variant="ghost"
                     className="text-primary text-sm"
-                    onClick={() => {
-                      const email = prompt("Enter your email for password reset:");
-                      if (email) {
-                        fetch('/api/auth/forgot-password', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ email })
-                        }).then(res => res.json()).then(data => {
-                          if (data.message) {
-                            setEmail(email);
-                            setStep('otp');
-                            toast({ title: "Success", description: data.message });
-                          }
-                        });
-                      }
-                    }}
+                    onClick={handleForgotPassword}
                   >
                     Forgot Password?
                   </Button>

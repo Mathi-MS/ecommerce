@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useListProducts } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit, Eye, Star, X } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const QUERY_KEY = ["/api/products"];
 
@@ -33,8 +32,18 @@ async function uploadImage(file: File): Promise<string> {
 
 export default function AdminProducts() {
   const apiOpts = useApiOptions();
-  const { data: productsData, isLoading } = useListProducts(undefined, apiOpts);
   const queryClient = useQueryClient();
+  const token = localStorage.getItem("token");
+  const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      const response = await fetch("/api/products", { headers: authHeaders });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+  });
 
   const [dialog, setDialog] = useState<"none" | "form" | "view">("none");
   const [editing, setEditing] = useState<any>(null);
@@ -44,10 +53,7 @@ export default function AdminProducts() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const token = localStorage.getItem("token");
-  const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-
-  const refetch = () => queryClient.refetchQueries({ queryKey: QUERY_KEY });
+  const refetch = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
   const openCreate = () => {
     setEditing(null);
@@ -106,12 +112,12 @@ export default function AdminProducts() {
         stock: Number(form.stock), order: Number(form.order) || 0,
         mainImage: form.mainImage, images: form.images, featured: false,
       };
-      if (editing) {
-        await fetch(`/api/products/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify(body) });
-      } else {
-        await fetch("/api/products", { method: "POST", headers: authHeaders, body: JSON.stringify(body) });
-      }
-      await refetch();
+      const response = editing 
+        ? await fetch(`/api/products/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify(body) })
+        : await fetch("/api/products", { method: "POST", headers: authHeaders, body: JSON.stringify(body) });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       setDialog("none");
     } catch { setError("Failed to save product."); }
     finally { setSaving(false); }
@@ -119,8 +125,13 @@ export default function AdminProducts() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this product?")) return;
-    await fetch(`/api/products/${id}`, { method: "DELETE", headers: authHeaders });
-    await refetch();
+    try {
+      const response = await fetch(`/api/products/${id}`, { method: "DELETE", headers: authHeaders });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    } catch (error) {
+      setError("Failed to delete product.");
+    }
   };
 
   const products = productsData?.products ?? [];

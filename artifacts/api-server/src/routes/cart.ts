@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { connectDB, CartItem, Product } from "@workspace/db";
+import { connectDB, CartItem, Product } from "../db/index.js";
 import jwt from "jsonwebtoken";
 
 const router: IRouter = Router();

@@ -1,29 +1,34 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useListOffers, useCreateOffer, useUpdateOffer, useDeleteOffer } from "@/lib/api";
-import { useApiOptions } from "@/store/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const QUERY_KEY = ["/api/offers"];
+const QUERY_KEY = ["offers"];
 
 export default function AdminOffers() {
-  const apiOpts = useApiOptions();
-  const { data: offers = [], isLoading } = useListOffers(apiOpts);
-  const createMutation = useCreateOffer(apiOpts);
-  const updateMutation = useUpdateOffer(apiOpts);
-  const deleteMutation = useDeleteOffer(apiOpts);
   const queryClient = useQueryClient();
+  const token = localStorage.getItem("token");
+  const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+  const { data: offers = [], isLoading } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      const res = await fetch(`${baseUrl}/api/offers`, { headers: authHeaders });
+      return res.json();
+    },
+  });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<{ id: string; text: string; status: string } | null>(null);
+  const [editing, setEditing] = useState<any>(null);
   const [text, setText] = useState("");
   const [status, setStatus] = useState("inactive");
   const [error, setError] = useState("");
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
@@ -37,47 +42,58 @@ export default function AdminOffers() {
   const openCreate = () => { setEditing(null); setText(""); setStatus("inactive"); setError(""); setIsDialogOpen(true); };
   const openEdit = (o: any) => { setEditing(o); setText(o.text); setStatus(o.status); setError(""); setIsDialogOpen(true); };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const err = validate();
     if (err) { setError(err); return; }
-    const invalidate = () => { queryClient.refetchQueries({ queryKey: QUERY_KEY }); setIsDialogOpen(false); };
-    if (editing) {
-      updateMutation.mutate({ id: editing.id, data: { text, status } }, { onSuccess: invalidate });
-    } else {
-      createMutation.mutate({ data: { text, status } }, { onSuccess: invalidate });
+    
+    setSaving(true);
+    try {
+      const response = editing
+        ? await fetch(`${baseUrl}/api/offers/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify({ text, status }) })
+        : await fetch(`${baseUrl}/api/offers`, { method: "POST", headers: authHeaders, body: JSON.stringify({ text, status }) });
+      
+      if (response.ok) {
+        await queryClient.refetchQueries({ queryKey: QUERY_KEY });
+        setIsDialogOpen(false);
+      } else {
+        setError('Failed to save offer');
+      }
+    } catch (err) {
+      setError('Failed to save offer');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleToggle = async (offer: any) => {
     if (togglingId) return;
     const newStatus = offer.status === "active" ? "inactive" : "active";
-    const token = localStorage.getItem("token");
     const id = String(offer.id);
     setTogglingId(id);
     try {
-      const res = await fetch(`/api/offers/${id}`, {
+      const res = await fetch(`${baseUrl}/api/offers/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: authHeaders,
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        queryClient.setQueryData(QUERY_KEY, (old: any[]) =>
-          (old ?? []).map((o: any) =>
-            newStatus === "active"
-              ? { ...o, status: String(o.id) === id ? "active" : "inactive" }
-              : { ...o, status: String(o.id) === id ? "inactive" : o.status }
-          )
-        );
+        await queryClient.refetchQueries({ queryKey: QUERY_KEY });
       }
     } finally {
       setTogglingId(null);
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Delete this offer?")) {
-      deleteMutation.mutate(id, { onSuccess: () => queryClient.refetchQueries({ queryKey: QUERY_KEY }) });
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this offer?")) return;
+    try {
+      const response = await fetch(`${baseUrl}/api/offers/${id}`, { method: "DELETE", headers: authHeaders });
+      if (response.ok) {
+        await queryClient.refetchQueries({ queryKey: QUERY_KEY });
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
     }
   };
 
@@ -113,8 +129,8 @@ export default function AdminOffers() {
                 </label>
               ))}
             </div>
-            <Button type="submit" className="w-full rounded-xl" disabled={createMutation.isPending || updateMutation.isPending}>
-              {editing ? "Update Offer" : "Save Offer"}
+            <Button type="submit" className="w-full rounded-xl" disabled={saving}>
+              {saving ? "Saving..." : editing ? "Update Offer" : "Save Offer"}
             </Button>
           </form>
         </DialogContent>

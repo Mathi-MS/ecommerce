@@ -18,7 +18,7 @@ function generateCode(name: string, percent: string) {
 
 export default function AdminCoupons() {
   const apiOpts = useApiOptions();
-  const { data: productsData } = useListProducts(undefined, apiOpts);
+  const { data: productsData } = useListProducts();
   const queryClient = useQueryClient();
   const token = localStorage.getItem("token");
   const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -26,9 +26,11 @@ export default function AdminCoupons() {
   const { data: coupons = [], isLoading } = useQuery<any[]>({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      const res = await fetch("/api/referrals", { headers: authHeaders });
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL }/api/referrals`, { headers: authHeaders });
       return res.json();
     },
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const [open, setOpen] = useState(false);
@@ -67,7 +69,7 @@ export default function AdminCoupons() {
     setSaving(true);
     setError("");
     try {
-      const url = editing ? `/api/referrals/${editing.id}` : "/api/referrals";
+      const url = editing ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/referrals/${editing.id}` : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/referrals`;
       const method = editing ? "PUT" : "POST";
       const res = await fetch(url, {
         method,
@@ -87,7 +89,7 @@ export default function AdminCoupons() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this coupon?")) return;
-    await fetch(`/api/referrals/${id}`, { method: "DELETE", headers: authHeaders });
+    await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/referrals/${id}`, { method: "DELETE", headers: authHeaders });
     await queryClient.refetchQueries({ queryKey: QUERY_KEY });
   };
 

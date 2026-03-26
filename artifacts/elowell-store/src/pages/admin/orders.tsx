@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useUpdateOrderStatus } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
@@ -48,7 +48,7 @@ export default function AdminOrders() {
 
   const debouncedSearch = useDebounce(search);
 
-  const queryKey = ["/api/orders", { status: statusFilter, search: debouncedSearch }];
+  const queryKey = useMemo(() => ["/api/orders", statusFilter, debouncedSearch], [statusFilter, debouncedSearch]);
 
   const { data: orders = [], isLoading } = useQuery<any[]>({
     queryKey,
@@ -56,18 +56,23 @@ export default function AdminOrders() {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (debouncedSearch) params.set("search", debouncedSearch);
-      const res = await fetch(`/api/orders?${params.toString()}`, { headers: authHeaders });
+      const url = params.toString() ? `/api/orders?${params.toString()}` : '/api/orders';
+      const res = await fetch(url, { headers: authHeaders });
       return res.json();
     },
+    staleTime: 5000,
+    refetchOnWindowFocus: false,
   });
 
   // counts per status for pills — fetched separately without filters
   const { data: allOrders = [] } = useQuery<any[]>({
-    queryKey: ["/api/orders", "counts"],
+    queryKey: ["/api/orders", "all"],
     queryFn: async () => {
       const res = await fetch("/api/orders", { headers: authHeaders });
       return res.json();
     },
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const countFor = (s: string) => s === "all"

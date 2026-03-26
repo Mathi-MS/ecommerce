@@ -1,54 +1,78 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { useListFaq, useCreateFaqItem } from "@/lib/api";
-import { useApiOptions } from "@/store/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const QUERY_KEY = ["/api/faq"];
+const QUERY_KEY = ["faq"];
 
 export default function AdminFaq() {
-  const apiOpts = useApiOptions();
-  const { data: faqs = [], isLoading } = useListFaq(apiOpts);
-  const createMutation = useCreateFaqItem(apiOpts);
   const queryClient = useQueryClient();
+  const token = localStorage.getItem("token");
+  const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+  const { data: faqs = [], isLoading } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      const res = await fetch(`${baseUrl}/api/faq`, { headers: authHeaders });
+      return res.json();
+    },
+  });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<{ id: string; question: string; answer: string; order: number } | null>(null);
+  const [editing, setEditing] = useState<any>(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [order, setOrder] = useState("0");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const reset = () => { setEditing(null); setQuestion(""); setAnswer(""); setOrder("0"); setError(""); };
   const openCreate = () => { reset(); setOrder(String(faqs.length + 1)); setIsDialogOpen(true); };
   const openEdit = (f: any) => { setEditing(f); setQuestion(f.question); setAnswer(f.answer); setOrder(String(f.order)); setError(""); setIsDialogOpen(true); };
 
-  const refetch = () => queryClient.refetchQueries({ queryKey: QUERY_KEY });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim()) { setError("Question is required."); return; }
     if (!answer.trim()) { setError("Answer is required."); return; }
-    const token = localStorage.getItem("token");
-    const headers = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-    if (editing) {
-      await fetch(`/api/faq/${editing.id}`, { method: "PUT", headers, body: JSON.stringify({ question, answer, order: Number(order) }) });
-    } else {
-      await fetch("/api/faq", { method: "POST", headers, body: JSON.stringify({ question, answer, order: Number(order) }) });
+    
+    setSaving(true);
+    try {
+      const response = editing 
+        ? await fetch(`${baseUrl}/api/faq/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify({ question, answer, order: Number(order) }) })
+        : await fetch(`${baseUrl}/api/faq`, { method: "POST", headers: authHeaders, body: JSON.stringify({ question, answer, order: Number(order) }) });
+      
+      if (response.ok) {
+        await queryClient.refetchQueries({ queryKey: QUERY_KEY });
+        setIsDialogOpen(false);
+      } else {
+        setError('Failed to save FAQ');
+      }
+    } catch (err) {
+      setError('Failed to save FAQ');
+    } finally {
+      setSaving(false);
     }
-    await refetch();
-    setIsDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this FAQ?")) return;
-    const token = localStorage.getItem("token");
-    await fetch(`/api/faq/${id}`, { method: "DELETE", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-    await refetch();
+    
+    try {
+      const response = await fetch(`${baseUrl}/api/faq/${id}`, { 
+        method: "DELETE", 
+        headers: authHeaders
+      });
+      
+      if (response.ok) {
+        await queryClient.refetchQueries({ queryKey: QUERY_KEY });
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
   };
 
   return (
@@ -74,7 +98,9 @@ export default function AdminFaq() {
             />
             <Input placeholder="Order (number)" type="number" value={order} onChange={e => setOrder(e.target.value)} />
             {error && <p className="text-xs text-destructive">{error}</p>}
-            <Button type="submit" className="w-full rounded-xl">{editing ? "Update FAQ" : "Save FAQ"}</Button>
+            <Button type="submit" className="w-full rounded-xl" disabled={saving}>
+              {saving ? "Saving..." : editing ? "Update FAQ" : "Save FAQ"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

@@ -21,7 +21,7 @@ export default function CartPage() {
   const [promoCode, setPromoCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
 
-  const handleUpdate = (itemId: number, newQuantity: number) => {
+  const handleUpdate = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     updateMutation.mutate({
       itemId,
@@ -31,7 +31,7 @@ export default function CartPage() {
     });
   };
 
-  const handleRemove = (itemId: number) => {
+  const handleRemove = (itemId: string) => {
     removeMutation.mutate({
       itemId,
       data: { sessionId: cartSessionId }
@@ -43,7 +43,7 @@ export default function CartPage() {
   const applyPromo = () => {
     if (!promoCode) return;
     validateReferral.mutate({ data: { code: promoCode } }, {
-      onSuccess: (res) => {
+      onSuccess: (res: any) => {
         setDiscountPercent(res.discountPercent);
         toast({ title: "Code Applied", description: `You got ${res.discountPercent}% off!` });
       },
@@ -85,13 +85,13 @@ export default function CartPage() {
                 <ul className="divide-y divide-border">
                   {cart.items.map(item => (
                     <li key={item.id} className="p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-                      <img src={item.productImage || 'https://via.placeholder.com/150'} alt={item.productName} className="w-24 h-24 rounded-xl object-cover bg-muted/50 border border-border/50 shrink-0" />
+                      <img src={item.product?.images?.[0] || 'https://via.placeholder.com/150'} alt={item.product?.name || 'Product'} className="w-24 h-24 rounded-xl object-cover bg-muted/50 border border-border/50 shrink-0" />
                       <div className="flex-1 text-center sm:text-left">
                         <Link href={`/products/${item.productId}`} className="font-bold text-lg hover:text-primary transition-colors block mb-1">
-                          {item.productName}
+                          {item.product?.name || 'Product'}
                         </Link>
                         <div className="text-muted-foreground mb-4">
-                          ${(item.discountPrice || item.price).toFixed(2)} each
+                          ${(item.product?.discountPrice || item.product?.price || 0).toFixed(2)} each
                         </div>
                         <div className="flex items-center justify-center sm:justify-start gap-4">
                           <div className="flex items-center bg-muted/50 border border-border rounded-lg h-10 p-1">
@@ -105,7 +105,7 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="font-bold text-xl text-foreground">
-                        ${((item.discountPrice || item.price) * item.quantity).toFixed(2)}
+                        ${((item.product?.discountPrice || item.product?.price || 0) * item.quantity).toFixed(2)}
                       </div>
                     </li>
                   ))}

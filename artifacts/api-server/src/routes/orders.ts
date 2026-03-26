@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
-import { connectDB, Order, OrderItem, CartItem, Product, ReferralCode } from "@workspace/db";
+import { connectDB, Order, OrderItem, CartItem, Product, ReferralCode } from "../db/index.js";
 
 const router: IRouter = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "elowell-secret-key-2024";
