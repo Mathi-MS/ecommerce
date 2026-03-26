@@ -2,10 +2,11 @@ import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingBag, User, Menu, X, Leaf } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
-import { useGetCart, useGetMe, useListOffers } from "@/lib/api";
+import { useGetMe, useListOffers } from "@/lib/api";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
+import { useQuery } from "@tanstack/react-query";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -25,8 +26,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (isError && token) logout(); // Only logout if we had a token but API failed
   }, [userData, isError, setUser, logout, user, token]);
 
-  // Fetch cart
-  const { data: cart } = useGetCart({ sessionId: cartSessionId });
+  // Fetch cart using React Query - only when user is logged in
+  const { data: cart } = useQuery({
+    queryKey: ["/api/cart"],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch(`/api/cart?sessionId=${cartSessionId}`, { headers });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      return response.json();
+    },
+    enabled: !!cartSessionId && !!user, // Only fetch cart when user is logged in
+  });
 
   // Fetch active offer for banner
   const { data: offers } = useListOffers(apiOpts);
@@ -69,7 +83,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             
             <Link href="/cart" className="relative p-2 text-foreground hover:text-primary transition-colors">
               <ShoppingBag className="h-6 w-6" />
-              {cart?.itemCount ? (
+              {user && cart?.itemCount ? (
                 <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-secondary text-secondary-foreground text-xs flex items-center justify-center font-bold shadow-sm">
                   {cart.itemCount}
                 </span>

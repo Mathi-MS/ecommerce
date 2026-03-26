@@ -9,9 +9,10 @@ interface SessionState {
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
   logout: () => void;
+  clearCart: () => void;
 }
 
-export const useSessionStore = create<SessionState>((set) => {
+export const useSessionStore = create<SessionState>((set, get) => {
   let cartSessionId = localStorage.getItem('cartSessionId');
   if (!cartSessionId) {
     cartSessionId = uuidv4();
@@ -43,7 +44,15 @@ export const useSessionStore = create<SessionState>((set) => {
     logout: () => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Clear cart on logout
+      get().clearCart();
       set({ user: null, token: null });
+    },
+    clearCart: () => {
+      // Generate new cart session ID to effectively clear the cart
+      const newCartSessionId = uuidv4();
+      localStorage.setItem('cartSessionId', newCartSessionId);
+      set({ cartSessionId: newCartSessionId });
     }
   };
 });

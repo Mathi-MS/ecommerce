@@ -155,10 +155,10 @@ router.post("/", async (req: Request, res: Response) => {
       try {
         const Razorpay = (await import("razorpay")).default;
         const razorpay = new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET });
-        const rOrder = await razorpay.orders.create({ amount: Math.round(total * 100), currency: "INR", receipt: `order_${order._id}` });
+        const rOrder = await razorpay.orders.create({ amount: Math.round(total * 100), currency: "USD", receipt: `order_${order._id}` });
         order.razorpayOrderId = rOrder.id;
         await order.save();
-        razorpayOrder = { id: rOrder.id, amount: total, currency: "INR" };
+        razorpayOrder = { id: rOrder.id, amount: total, currency: "USD" };
       } catch (payErr) {
         req.log.warn({ payErr }, "Razorpay order creation failed");
       }

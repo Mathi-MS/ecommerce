@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck } from "lucide-react";
+import { useEffect } from "react";
 
 const checkoutSchema = z.object({
   customerName: z.string().min(2, "Name is required"),
@@ -31,6 +32,17 @@ export default function CheckoutPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -40,25 +52,93 @@ export default function CheckoutPage() {
     }
   });
 
-  const onSubmit = (data: CheckoutForm) => {
+  const onSubmit = async (data: CheckoutForm) => {
     if (!cart || cart.items.length === 0) return;
     
-    createOrder.mutate({
-      data: {
-        ...data,
-        sessionId: cartSessionId,
-        userId: user?.id,
+    try {
+      // First create the order
+      const orderResponse = await new Promise((resolve, reject) => {
+        createOrder.mutate({
+          data: {
+            ...data,
+            sessionId: cartSessionId,
+            userId: user?.id,
+          }
+        }, {
+          onSuccess: resolve,
+          onError: reject
+        });
+      });
+
+      const order = (orderResponse as any).order;
+      const total = cart.total + (cart.total >= 50 ? 0 : 5);
+
+      // Create Razorpay payment order
+      const paymentResponse = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total, currency: 'USD' })
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error('Failed to create payment order');
       }
-    }, {
-      onSuccess: (res: any) => {
-        // Mocking Razorpay flow completion
-        toast({ title: "Order Placed Successfully!" });
-        setLocation(`/order-success?id=${res.order.id}`);
-      },
-      onError: (err: any) => {
-        toast({ title: "Error", description: err.message || "Failed to process order", variant: "destructive" });
-      }
-    });
+
+      const paymentOrder = await paymentResponse.json();
+
+      // Initialize Razorpay
+      const options = {
+        key: paymentOrder.key,
+        amount: paymentOrder.amount * 100, // Amount in paise
+        currency: paymentOrder.currency,
+        name: 'Elowell Store',
+        description: `Order #${order.id}`,
+        order_id: paymentOrder.id,
+        handler: async function (response: any) {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: order.id
+              })
+            });
+
+            if (verifyResponse.ok) {
+              toast({ title: "Payment Successful!", description: "Your order has been placed successfully." });
+              setLocation(`/order-success?id=${order.id}`);
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (error) {
+            toast({ title: "Payment Error", description: "Payment verification failed. Please contact support.", variant: "destructive" });
+          }
+        },
+        prefill: {
+          name: data.customerName,
+          email: data.customerEmail,
+          contact: data.customerPhone
+        },
+        theme: {
+          color: '#3B82F6'
+        },
+        modal: {
+          ondismiss: function() {
+            toast({ title: "Payment Cancelled", description: "You can complete the payment later.", variant: "destructive" });
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to process order", variant: "destructive" });
+    }
   };
 
   if (isLoading) return <AppLayout><div className="min-h-[50vh] flex items-center justify-center">Loading checkout...</div></AppLayout>;

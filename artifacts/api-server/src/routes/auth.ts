@@ -83,12 +83,31 @@ router.post("/google-signin", async (req: Request, res: Response) => {
     await connectDB();
     const { credential } = req.body;
     
-    // Decode Google JWT (in production, verify with Google's public keys)
-    const payload = JSON.parse(Buffer.from(credential.split('.')[1], 'base64').toString());
+    if (!credential) {
+      res.status(400).json({ error: "Google credential is required" });
+      return;
+    }
+    
+    let payload;
+    try {
+      // Decode Google JWT (in production, verify with Google's public keys)
+      const parts = credential.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid JWT format');
+      }
+      
+      const decodedPayload = Buffer.from(parts[1], 'base64').toString();
+      payload = JSON.parse(decodedPayload);
+    } catch (decodeError) {
+      console.error('JWT decode error:', decodeError);
+      res.status(400).json({ error: "Invalid Google credential format" });
+      return;
+    }
+    
     const { email, name, sub: googleId } = payload;
     
-    if (!email || !name) {
-      res.status(400).json({ error: "Invalid Google credential" });
+    if (!email || !name || !googleId) {
+      res.status(400).json({ error: "Missing required fields in Google credential" });
       return;
     }
 
@@ -98,34 +117,55 @@ router.post("/google-signin", async (req: Request, res: Response) => {
       // Existing user - sign in directly (SSO doesn't need OTP)
       if (!user.isVerified) {
         user.isVerified = true;
+      }
+      if (!user.ssoProvider) {
         user.ssoProvider = "google";
         user.ssoId = googleId;
-        await user.save();
       }
+      await user.save();
+      
       const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
       res.json({
-        user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role },
+        user: { 
+          id: user._id, 
+          name: user.name, 
+          email: user.email, 
+          phone: user.phone || '', 
+          role: user.role || 'customer' 
+        },
         token
       });
     } else {
       // New user - create and sign in directly (no OTP for SSO)
+      // Check if this is an admin email
+      const role = email === 'sammathi17@gmail.com' ? 'admin' : 'customer';
+      
       const newUser = await User.create({
         name,
         email,
         isVerified: true, // SSO users are automatically verified
         ssoProvider: "google",
         ssoId: googleId,
-        role: "customer"
+        role,
+        otpAttempts: 0
       });
+      
       const token = jwt.sign({ userId: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
       res.json({
-        user: { id: newUser._id, name: newUser.name, email: newUser.email, phone: newUser.phone, role: newUser.role },
+        user: { 
+          id: newUser._id, 
+          name: newUser.name, 
+          email: newUser.email, 
+          phone: newUser.phone || '', 
+          role: newUser.role 
+        },
         token
       });
     }
   } catch (err) {
-    req.log.error({ err }, "Google signin error");
-    res.status(500).json({ error: "Google sign-in failed" });
+    console.error('Google signin error:', err);
+    req.log?.error({ err }, "Google signin error");
+    res.status(500).json({ error: "Google sign-in failed. Please try again." });
   }
 });
 

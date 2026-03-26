@@ -152,11 +152,42 @@ export const useGetMe = (params?: any) => ({
   refetch: () => Promise.resolve()
 });
 
-export const useGetCart = (params?: any) => ({ 
-  data: null as Cart | null, 
-  isLoading: false,
-  refetch: () => Promise.resolve()
-});
+export const useGetCart = (params?: any) => {
+  const [data, setData] = useState<Cart | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchCart = async () => {
+    try {
+      setIsLoading(true);
+      const cartSessionId = localStorage.getItem('cartSessionId');
+      if (!cartSessionId) {
+        setData(null);
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch(`/api/cart?sessionId=${cartSessionId}`, { headers });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const cart = await response.json();
+      setData(cart);
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchCart();
+  }, []);
+  
+  return { data, isLoading, refetch: fetchCart };
+};
 
 export const useListOffers = (params?: any) => {
   const [data, setData] = useState<Offer[]>([]);
@@ -182,11 +213,51 @@ export const useListOffers = (params?: any) => {
   return { data, isLoading, refetch: fetchOffers };
 };
 
-export const useAddToCart = () => ({ 
-  mutate: (data: any, options?: any) => Promise.resolve(),
-  isPending: false,
-  isLoading: false
-});
+export const useAddToCart = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: { productId: string; quantity: number; sessionId: string } }, callbacks?: { onSuccess?: () => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          productId: options.data.productId,
+          quantity: options.data.quantity,
+          sessionId: options.data.sessionId,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        let errorMessage = errorData;
+        try {
+          const errorJson = JSON.parse(errorData);
+          errorMessage = errorJson.error || errorData;
+        } catch {
+          // If not JSON, use the text as is
+        }
+        throw new Error(errorMessage || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      callbacks?.onSuccess?.();
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
 
 export const useListProducts = (params?: any) => {
   const [data, setData] = useState<{ products: Product[] }>({ products: [] });
@@ -290,17 +361,94 @@ export const useUpdateOrderStatus = (params?: any) => ({
   isLoading: false
 });
 
-export const useUpdateCartItem = () => ({ 
-  mutate: (data: any, options?: any) => Promise.resolve(),
-  isPending: false,
-  isLoading: false
-});
+export const useUpdateCartItem = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { itemId: string; data: { quantity: number; sessionId: string } }, callbacks?: { onSuccess?: () => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch(`/api/cart/${options.itemId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          quantity: options.data.quantity,
+          sessionId: options.data.sessionId,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        let errorMessage = errorData;
+        try {
+          const errorJson = JSON.parse(errorData);
+          errorMessage = errorJson.error || errorData;
+        } catch {
+          // If not JSON, use the text as is
+        }
+        throw new Error(errorMessage || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      callbacks?.onSuccess?.();
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
 
-export const useRemoveCartItem = () => ({ 
-  mutate: (data: any, options?: any) => Promise.resolve(),
-  isPending: false,
-  isLoading: false
-});
+export const useRemoveCartItem = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { itemId: string; data: { sessionId: string } }, callbacks?: { onSuccess?: () => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch(`/api/cart/${options.itemId}`, {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({
+          sessionId: options.data.sessionId,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        let errorMessage = errorData;
+        try {
+          const errorJson = JSON.parse(errorData);
+          errorMessage = errorJson.error || errorData;
+        } catch {
+          // If not JSON, use the text as is
+        }
+        throw new Error(errorMessage || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      callbacks?.onSuccess?.();
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
 
 export const useValidateReferralCode = () => ({ 
   mutate: (data: any, options?: any) => Promise.resolve({ isValid: false, discount: 0 }),
@@ -308,11 +456,47 @@ export const useValidateReferralCode = () => ({
   isLoading: false
 });
 
-export const useCreateOrder = () => ({ 
-  mutate: (data: any, options?: any) => Promise.resolve(),
-  isPending: false,
-  isLoading: false
-});
+export const useCreateOrder = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: any }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(options.data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        let errorMessage = errorData;
+        try {
+          const errorJson = JSON.parse(errorData);
+          errorMessage = errorJson.error || errorData;
+        } catch {
+          // If not JSON, use the text as is
+        }
+        throw new Error(errorMessage || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
 
 export const useListCategories = () => ({ 
   data: [] as Category[], 
@@ -320,14 +504,62 @@ export const useListCategories = () => ({
   refetch: () => Promise.resolve()
 });
 
-export const useGetProduct = (id?: string) => ({ 
-  data: null as Product | null, 
-  isLoading: false,
-  refetch: () => Promise.resolve()
-});
+export const useGetProduct = (id?: string) => {
+  const [data, setData] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchProduct = async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const product = await apiCall(`/api/products/${id}`);
+      setData(product);
+    } catch (error) {
+      console.error('Failed to fetch product:', error);
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchProduct();
+  }, [id]);
+  
+  return { data, isLoading, refetch: fetchProduct };
+};
 
-export const useGetProductReviews = (id?: string) => ({ 
-  data: [] as Review[], 
-  isLoading: false,
-  refetch: () => Promise.resolve()
-});
+export const useGetProductReviews = (id?: string) => {
+  const [data, setData] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchReviews = async () => {
+    if (!id) {
+      setData([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const reviews = await apiCall(`/api/products/${id}/reviews`);
+      setData(reviews);
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchReviews();
+  }, [id]);
+  
+  return { data, isLoading, refetch: fetchReviews };
+};

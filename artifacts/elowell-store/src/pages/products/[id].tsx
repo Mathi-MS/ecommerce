@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useParams } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useGetProduct, useAddToCart, useGetProductReviews } from "@/lib/api";
+import { useAddToCart } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart, Star, Tag } from "lucide-react";
 import { useSessionStore } from "@/store/session";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ProductCard } from "@/components/ProductCard";
 
@@ -13,8 +13,27 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const { data: product, isLoading } = useGetProduct(id as any);
-  const { data: reviews } = useGetProductReviews(id as any);
+  
+  const { data: product, isLoading } = useQuery({
+    queryKey: [`/api/products/${id}`],
+    queryFn: async () => {
+      const response = await fetch(`/api/products/${id}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+    enabled: !!id,
+  });
+  
+  const { data: reviews } = useQuery({
+    queryKey: [`/api/products/${id}/reviews`],
+    queryFn: async () => {
+      const response = await fetch(`/api/products/${id}/reviews`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+    enabled: !!id,
+  });
+  
   const cartSessionId = useSessionStore(s => s.cartSessionId);
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();

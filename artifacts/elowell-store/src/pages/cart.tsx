@@ -1,44 +1,184 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useGetCart, useUpdateCartItem, useRemoveCartItem, useValidateReferralCode } from "@/lib/api";
 import { useSessionStore } from "@/store/session";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CartPage() {
-  const cartSessionId = useSessionStore(s => s.cartSessionId);
-  const { data: cart, isLoading } = useGetCart({ sessionId: cartSessionId });
+  const [, setLocation] = useLocation();
+  const { user, cartSessionId } = useSessionStore();
+  const { data: cart, isLoading, refetch } = useGetCart({ sessionId: cartSessionId });
   const updateMutation = useUpdateCartItem();
   const removeMutation = useRemoveCartItem();
   const validateReferral = useValidateReferralCode();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [promoCode, setPromoCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [localCart, setLocalCart] = useState<any>(null);
+  const [pendingUpdates, setPendingUpdates] = useState<Map<string, number>>(new Map());
+  const [pendingDeletes, setPendingDeletes] = useState<Set<string>>(new Set());
+
+  // Use local cart if available, otherwise use server cart data
+  const displayCart = localCart || cart;
+
+  // Initialize local cart when server data loads
+  useEffect(() => {
+    if (cart && !localCart) {
+      setLocalCart(cart);
+    }
+  }, [cart, localCart]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to view your cart.",
+        variant: "destructive"
+      });
+      setLocation('/auth?redirect=' + encodeURIComponent('/cart'));
+    }
+  }, [user, setLocation, toast]);
+
+  // Sync with server only on page unload or navigation
+  const syncWithServer = async () => {
+    if (pendingUpdates.size === 0 && pendingDeletes.size === 0) return;
+    
+    try {
+      // Process pending updates
+      const updatePromises = Array.from(pendingUpdates.entries()).map(([itemId, quantity]) =>
+        fetch(`/api/cart/${itemId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(localStorage.getItem('token') && { Authorization: `Bearer ${localStorage.getItem('token')}` })
+          },
+          body: JSON.stringify({ quantity, sessionId: cartSessionId })
+        })
+      );
+      
+      // Process pending deletes
+      const deletePromises = Array.from(pendingDeletes).map(itemId =>
+        fetch(`/api/cart/${itemId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(localStorage.getItem('token') && { Authorization: `Bearer ${localStorage.getItem('token')}` })
+          },
+          body: JSON.stringify({ sessionId: cartSessionId })
+        })
+      );
+      
+      // Execute all requests
+      await Promise.all([...updatePromises, ...deletePromises]);
+      
+      // Clear pending operations
+      setPendingUpdates(new Map());
+      setPendingDeletes(new Set());
+    } catch (error) {
+      console.error('Failed to sync cart:', error);
+    }
+  };
+
+  // Sync on page unload/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingUpdates.size > 0 || pendingDeletes.size > 0) {
+        // Use sendBeacon for reliable sync on page unload
+        const updates = Array.from(pendingUpdates.entries()).map(([itemId, quantity]) => ({
+          type: 'update',
+          itemId,
+          quantity,
+          sessionId: cartSessionId
+        }));
+        
+        const deletes = Array.from(pendingDeletes).map(itemId => ({
+          type: 'delete',
+          itemId,
+          sessionId: cartSessionId
+        }));
+        
+        const payload = JSON.stringify([...updates, ...deletes]);
+        navigator.sendBeacon('/api/cart/batch', payload);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        syncWithServer();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Sync any pending changes on component unmount (navigation)
+      if (pendingUpdates.size > 0 || pendingDeletes.size > 0) {
+        syncWithServer();
+      }
+    };
+  }, [pendingUpdates, pendingDeletes, cartSessionId]);
 
   const handleUpdate = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    updateMutation.mutate({
-      itemId,
-      data: { quantity: newQuantity, sessionId: cartSessionId }
-    }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/cart"] })
-    });
+    
+    // Update local cart immediately
+    if (localCart) {
+      const updatedItems = localCart.items.map(item => 
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      );
+      const updatedTotal = updatedItems.reduce((sum, item) => 
+        sum + (item.discountPrice || item.price || 0) * item.quantity, 0
+      );
+      const updatedItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      setLocalCart({
+        ...localCart,
+        items: updatedItems,
+        total: updatedTotal,
+        itemCount: updatedItemCount
+      });
+      
+      // Track pending update (no API call)
+      setPendingUpdates(prev => new Map(prev.set(itemId, newQuantity)));
+    }
   };
 
   const handleRemove = (itemId: string) => {
-    removeMutation.mutate({
-      itemId,
-      data: { sessionId: cartSessionId }
-    }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/cart"] })
-    });
+    // Update local cart immediately
+    if (localCart) {
+      const updatedItems = localCart.items.filter(item => item.id !== itemId);
+      const updatedTotal = updatedItems.reduce((sum, item) => 
+        sum + (item.discountPrice || item.price || 0) * item.quantity, 0
+      );
+      const updatedItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      setLocalCart({
+        ...localCart,
+        items: updatedItems,
+        total: updatedTotal,
+        itemCount: updatedItemCount
+      });
+      
+      // Track pending delete (no API call)
+      setPendingDeletes(prev => new Set(prev.add(itemId)));
+      // Remove from pending updates if it exists
+      setPendingUpdates(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(itemId);
+        return newMap;
+      });
+    }
   };
+
 
   const applyPromo = () => {
     if (!promoCode) return;
@@ -54,8 +194,8 @@ export default function CartPage() {
     });
   };
 
-  const isCartEmpty = !cart || cart.items.length === 0;
-  const subtotal = cart?.total || 0;
+  const isCartEmpty = !displayCart || displayCart.items.length === 0;
+  const subtotal = displayCart?.total || 0;
   const discountAmount = subtotal * (discountPercent / 100);
   const finalTotal = subtotal - discountAmount;
 
@@ -83,15 +223,15 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
                 <ul className="divide-y divide-border">
-                  {cart.items.map(item => (
+                  {displayCart.items.map(item => (
                     <li key={item.id} className="p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-                      <img src={item.product?.images?.[0] || 'https://via.placeholder.com/150'} alt={item.product?.name || 'Product'} className="w-24 h-24 rounded-xl object-cover bg-muted/50 border border-border/50 shrink-0" />
+                      <img src={item.productImage || 'https://via.placeholder.com/150'} alt={item.productName || 'Product'} className="w-24 h-24 rounded-xl object-cover bg-muted/50 border border-border/50 shrink-0" />
                       <div className="flex-1 text-center sm:text-left">
                         <Link href={`/products/${item.productId}`} className="font-bold text-lg hover:text-primary transition-colors block mb-1">
-                          {item.product?.name || 'Product'}
+                          {item.productName || 'Product'}
                         </Link>
                         <div className="text-muted-foreground mb-4">
-                          ${(item.product?.discountPrice || item.product?.price || 0).toFixed(2)} each
+                          ${(item.discountPrice || item.price || 0).toFixed(2)} each
                         </div>
                         <div className="flex items-center justify-center sm:justify-start gap-4">
                           <div className="flex items-center bg-muted/50 border border-border rounded-lg h-10 p-1">
@@ -105,7 +245,7 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="font-bold text-xl text-foreground">
-                        ${((item.product?.discountPrice || item.product?.price || 0) * item.quantity).toFixed(2)}
+                        ${((item.discountPrice || item.price || 0) * item.quantity).toFixed(2)}
                       </div>
                     </li>
                   ))}

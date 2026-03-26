@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Star, ShoppingCart } from "lucide-react";
 import { Product, useAddToCart } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { motion } from "framer-motion";
 export function ProductCard({ product }: { product: Product }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const cartSessionId = useSessionStore(s => s.cartSessionId);
+  const [, setLocation] = useLocation();
+  const { user, cartSessionId } = useSessionStore();
   const addToCartMutation = useAddToCart();
   
   const isOutOfStock = product.stock === 0;
@@ -18,6 +19,19 @@ export function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isOutOfStock) return;
+    
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to add items to your cart.",
+        variant: "destructive"
+      });
+      // Redirect to auth with current page as redirect parameter
+      const currentPath = window.location.pathname;
+      setLocation(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
     
     addToCartMutation.mutate({
       data: {
