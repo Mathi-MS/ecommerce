@@ -52,7 +52,7 @@ export default function CartPage() {
     try {
       // Process pending updates
       const updatePromises = Array.from(pendingUpdates.entries()).map(([itemId, quantity]) =>
-        fetch(`/api/cart/${itemId}`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/${itemId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export default function CartPage() {
       
       // Process pending deletes
       const deletePromises = Array.from(pendingDeletes).map(itemId =>
-        fetch(`/api/cart/${itemId}`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/${itemId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',

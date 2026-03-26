@@ -35,7 +35,7 @@ export function ProfileDropdown() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/profile", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/profile`, {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify(profileForm)

@@ -106,7 +106,7 @@ export const authAPI = {
     if (!token) return;
     
     try {
-      await fetch('/api/cart/migrate', {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/migrate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

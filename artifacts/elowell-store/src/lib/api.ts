@@ -223,7 +223,7 @@ export const useAddToCart = () => {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       
-      const response = await fetch('/api/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -371,7 +371,7 @@ export const useUpdateCartItem = () => {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       
-      const response = await fetch(`/api/cart/${options.itemId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/${options.itemId}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
@@ -416,7 +416,7 @@ export const useRemoveCartItem = () => {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       
-      const response = await fetch(`/api/cart/${options.itemId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/${options.itemId}`, {
         method: 'DELETE',
         headers,
         body: JSON.stringify({
