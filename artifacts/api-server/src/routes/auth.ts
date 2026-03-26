@@ -159,6 +159,7 @@ router.post("/google-signin", async (req: Request, res: Response) => {
         ssoId: googleId,
         role,
         otpAttempts: 0
+        // Don't set phone field at all for SSO users to avoid null conflicts
       });
       
       console.log('New user created:', { id: newUser._id, email: newUser.email, role: newUser.role });
