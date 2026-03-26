@@ -212,17 +212,24 @@ export default function CheckoutPage() {
             <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-8 sticky top-28">
               <h2 className="text-xl font-bold mb-6">Order Summary</h2>
               
+              <div className="text-sm text-muted-foreground mb-4">
+                {cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'} in your cart
+              </div>
+              
               <ul className="divide-y divide-border mb-6">
                 {cart.items.map(item => (
                   <li key={item.id} className="py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden relative border border-border/50">
-                        <img src={item.product?.images?.[0] || 'https://via.placeholder.com/150'} alt={item.product?.name || 'Product'} className="w-full h-full object-cover" />
+                        <img src={item.productImage || 'https://via.placeholder.com/150'} alt={item.productName || 'Product'} className="w-full h-full object-cover" />
                         <div className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-card">{item.quantity}</div>
                       </div>
-                      <span className="font-medium text-sm">{item.product?.name || 'Product'}</span>
+                      <div>
+                        <span className="font-medium text-sm block">{item.productName || 'Product'}</span>
+                        <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
+                      </div>
                     </div>
-                    <span className="font-bold text-sm">${((item.product?.discountPrice || item.product?.price || 0) * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-sm">${((item.discountPrice || item.price || 0) * item.quantity).toFixed(2)}</span>
                   </li>
                 ))}
               </ul>

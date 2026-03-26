@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ShoppingCart, Tag, Megaphone, HelpCircle, LogOut, ArrowLeft, Ticket } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Tag, Megaphone, HelpCircle, LogOut, ArrowLeft, Ticket, FolderOpen } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
 import { useGetMe } from "@/lib/api";
 
@@ -30,6 +30,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Products', path: '/admin/products', icon: Package },
+    { name: 'Categories', path: '/admin/categories', icon: FolderOpen },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
     { name: 'Referrals', path: '/admin/referrals', icon: Tag },
     { name: 'Coupons', path: '/admin/coupons', icon: Ticket },

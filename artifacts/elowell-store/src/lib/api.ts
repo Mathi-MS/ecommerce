@@ -38,11 +38,12 @@ export interface CartItem {
   id: string;
   productId: string;
   quantity: number;
-  product: Product;
-  productName?: string;
-  productImage?: string;
-  price?: number;
+  productName: string;
+  productImage: string;
+  price: number;
   discountPrice?: number;
+  sessionId?: string;
+  userId?: string;
 }
 
 export interface Cart {
@@ -102,7 +103,9 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  description: string;
+  description?: string;
+  imageUrl?: string;
+  createdAt?: string;
 }
 
 export interface Review {
@@ -498,11 +501,97 @@ export const useCreateOrder = () => {
   return { mutate, isPending, isLoading: isPending };
 };
 
-export const useListCategories = () => ({ 
-  data: [] as Category[], 
-  isLoading: false,
-  refetch: () => Promise.resolve()
-});
+export const useListCategories = () => {
+  const [data, setData] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const categories = await apiCall('/api/categories');
+      setData(categories);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+  
+  return { data, isLoading, refetch: fetchCategories };
+};
+
+export const useCreateCategory = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: { name: string; description?: string; imageUrl?: string } }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUpdateCategory = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string; data: { name: string; description?: string; imageUrl?: string } }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/categories/${options.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useDeleteCategory = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/categories/${options.id}`, {
+        method: 'DELETE',
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
 
 export const useGetProduct = (id?: string) => {
   const [data, setData] = useState<Product | null>(null);
