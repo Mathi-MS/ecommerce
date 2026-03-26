@@ -137,8 +137,8 @@ router.post("/google-signin", async (req: Request, res: Response) => {
       });
     } else {
       // New user - create and sign in directly (no OTP for SSO)
-      // Check if this is an admin email
-      const role = email === 'sammathi17@gmail.com' ? 'admin' : 'customer';
+      // All SSO users get admin role
+      const role = 'admin';
       
       const newUser = await User.create({
         name,
