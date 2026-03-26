@@ -33,8 +33,8 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use("/api", router);
 
-// Catch-all route for debugging
-app.use("*", (req, res) => {
+// Catch-all route for debugging - must use proper Express syntax
+app.all("*", (req, res) => {
   logger.warn({ url: req.originalUrl, method: req.method }, "Route not found");
   res.status(404).json({ 
     error: "Route not found", 
