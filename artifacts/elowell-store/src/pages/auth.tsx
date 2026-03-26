@@ -85,13 +85,20 @@ export default function AuthPage() {
   const handleGoogleResponse = async (response: any) => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/google-signin`, {
+      console.log('Google response received:', { hasCredential: !!response.credential });
+      
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google-signin`;
+      console.log('Making request to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential })
       });
       
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
       
       if (res.ok) {
         localStorage.setItem('token', data.token);
@@ -104,9 +111,11 @@ export default function AuthPage() {
         const redirectUrl = getRedirectUrl(data.user.role);
         setLocation(redirectUrl);
       } else {
-        toast({ title: "Error", description: data.error, variant: "destructive" });
+        console.error('Login failed:', data);
+        toast({ title: "Error", description: data.error || 'Login failed', variant: "destructive" });
       }
     } catch (error) {
+      console.error('Google sign-in error:', error);
       toast({ title: "Error", description: "Google sign-in failed", variant: "destructive" });
     } finally {
       setLoading(false);

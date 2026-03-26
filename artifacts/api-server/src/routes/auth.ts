@@ -80,40 +80,48 @@ async function sendOTPEmail(email: string, otp: string, type: 'signup' | 'login'
 // Google SSO
 router.post("/google-signin", async (req: Request, res: Response) => {
   try {
+    console.log('Google signin request received:', { hasCredential: !!req.body.credential });
     await connectDB();
     const { credential } = req.body;
     
     if (!credential) {
+      console.log('No credential provided');
       res.status(400).json({ error: "Google credential is required" });
       return;
     }
     
     let payload;
     try {
+      console.log('Attempting to decode JWT credential');
       // Decode Google JWT (in production, verify with Google's public keys)
       const parts = credential.split('.');
       if (parts.length !== 3) {
-        throw new Error('Invalid JWT format');
+        throw new Error('Invalid JWT format - expected 3 parts, got ' + parts.length);
       }
       
+      console.log('JWT has correct format, decoding payload');
       const decodedPayload = Buffer.from(parts[1], 'base64').toString();
       payload = JSON.parse(decodedPayload);
+      console.log('JWT decoded successfully:', { email: payload.email, name: payload.name, hasGoogleId: !!payload.sub });
     } catch (decodeError) {
       console.error('JWT decode error:', decodeError);
-      res.status(400).json({ error: "Invalid Google credential format" });
+      res.status(400).json({ error: "Invalid Google credential format: " + (decodeError instanceof Error ? decodeError.message : 'Unknown error') });
       return;
     }
     
     const { email, name, sub: googleId } = payload;
     
     if (!email || !name || !googleId) {
+      console.log('Missing required fields:', { email: !!email, name: !!name, googleId: !!googleId });
       res.status(400).json({ error: "Missing required fields in Google credential" });
       return;
     }
 
+    console.log('Looking for existing user with email:', email);
     let user = await User.findOne({ email });
     
     if (user) {
+      console.log('Existing user found:', { id: user._id, email: user.email, role: user.role });
       // Existing user - sign in directly (SSO doesn't need OTP)
       if (!user.isVerified) {
         user.isVerified = true;
@@ -123,8 +131,10 @@ router.post("/google-signin", async (req: Request, res: Response) => {
         user.ssoId = googleId;
       }
       await user.save();
+      console.log('User updated successfully');
       
       const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+      console.log('JWT token generated for existing user');
       res.json({
         user: { 
           id: user._id, 
@@ -136,6 +146,7 @@ router.post("/google-signin", async (req: Request, res: Response) => {
         token
       });
     } else {
+      console.log('Creating new user for email:', email);
       // New user - create and sign in directly (no OTP for SSO)
       // All SSO users get admin role
       const role = 'admin';
@@ -150,7 +161,10 @@ router.post("/google-signin", async (req: Request, res: Response) => {
         otpAttempts: 0
       });
       
+      console.log('New user created:', { id: newUser._id, email: newUser.email, role: newUser.role });
+      
       const token = jwt.sign({ userId: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
+      console.log('JWT token generated for new user');
       res.json({
         user: { 
           id: newUser._id, 
@@ -163,9 +177,17 @@ router.post("/google-signin", async (req: Request, res: Response) => {
       });
     }
   } catch (err) {
-    console.error('Google signin error:', err);
+    console.error('Google signin error - Full details:', {
+      error: err,
+      message: err instanceof Error ? err.message : 'Unknown error',
+      stack: err instanceof Error ? err.stack : 'No stack trace',
+      requestBody: req.body
+    });
     req.log?.error({ err }, "Google signin error");
-    res.status(500).json({ error: "Google sign-in failed. Please try again." });
+    res.status(500).json({ 
+      error: "Google sign-in failed. Please try again.",
+      details: process.env.NODE_ENV === 'development' ? (err instanceof Error ? err.message : 'Unknown error') : undefined
+    });
   }
 });
 
