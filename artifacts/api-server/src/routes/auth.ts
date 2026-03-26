@@ -122,7 +122,7 @@ router.post("/google-signin", async (req: Request, res: Response) => {
     
     if (user) {
       console.log('Existing user found:', { id: user._id, email: user.email, role: user.role });
-      // Existing user - sign in directly (SSO doesn't need OTP)
+      // Existing user - sign in directly and KEEP their existing role
       if (!user.isVerified) {
         user.isVerified = true;
       }
@@ -131,25 +131,24 @@ router.post("/google-signin", async (req: Request, res: Response) => {
         user.ssoId = googleId;
       }
       await user.save();
-      console.log('User updated successfully');
+      console.log('User updated successfully - keeping existing role:', user.role);
       
       const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
-      console.log('JWT token generated for existing user');
+      console.log('JWT token generated for existing user with role:', user.role);
       res.json({
         user: { 
           id: user._id, 
           name: user.name, 
           email: user.email, 
           phone: user.phone || '', 
-          role: user.role || 'customer' 
+          role: user.role // Use existing role from database
         },
         token
       });
     } else {
       console.log('Creating new user for email:', email);
-      // New user - create and sign in directly (no OTP for SSO)
-      // All SSO users get admin role
-      const role = 'admin';
+      // New user - create with customer role by default
+      const role = 'customer';
       
       const newUser = await User.create({
         name,
@@ -157,22 +156,22 @@ router.post("/google-signin", async (req: Request, res: Response) => {
         isVerified: true, // SSO users are automatically verified
         ssoProvider: "google",
         ssoId: googleId,
-        role,
+        role, // New users get customer role
         otpAttempts: 0
         // Don't set phone field at all for SSO users to avoid null conflicts
       });
       
-      console.log('New user created:', { id: newUser._id, email: newUser.email, role: newUser.role });
+      console.log('New user created with customer role:', { id: newUser._id, email: newUser.email, role: newUser.role });
       
       const token = jwt.sign({ userId: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
-      console.log('JWT token generated for new user');
+      console.log('JWT token generated for new customer user');
       res.json({
         user: { 
           id: newUser._id, 
           name: newUser.name, 
           email: newUser.email, 
           phone: newUser.phone || '', 
-          role: newUser.role 
+          role: newUser.role // New users get customer role
         },
         token
       });
