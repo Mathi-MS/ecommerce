@@ -17,6 +17,14 @@ async function mapProduct(p: any, categoryName?: string | null) {
   const reviewCount = reviews.length;
   const averageRating = reviewCount > 0 ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviewCount : null;
   const coupon = await ReferralCode.findOne({ productIds: p._id, isActive: true });
+  
+  // Get category names for the new categoryIds field
+  let categories = [];
+  if (p.categoryIds && p.categoryIds.length > 0) {
+    const categoryDocs = await Category.find({ _id: { $in: p.categoryIds } });
+    categories = categoryDocs.map((c: any) => ({ id: c._id, name: c.name, slug: c.slug }));
+  }
+  
   return {
     id: p._id,
     name: p.name,
@@ -26,6 +34,8 @@ async function mapProduct(p: any, categoryName?: string | null) {
     price: p.price,
     discountPrice: p.discountPrice ?? null,
     categoryId: p.categoryId ?? null,
+    categoryIds: p.categoryIds || [],
+    categories: categories,
     categoryName: categoryName ?? null,
     mainImage: p.mainImage || (p.images?.[0] ?? ""),
     images: p.images,
@@ -58,11 +68,40 @@ router.post("/upload", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { category, featured, limit = 50, offset = 0 } = req.query;
+    const { category, featured, limit = 50, offset = 0, ids } = req.query;
     const filter: any = {};
+    
+    // If specific IDs are requested, fetch those products
+    if (ids) {
+      const productIds = String(ids).split(',').filter(id => id.trim());
+      if (productIds.length > 0) {
+        const products = await Product.find({ _id: { $in: productIds } }).populate("categoryId").populate("categoryIds");
+        const result = await Promise.all(products.map((p: any) => mapProduct(p, p.categoryId?.name)));
+        res.json({ products: result, total: result.length });
+        return;
+      }
+    }
+    
     if (featured !== undefined) filter.featured = featured === "true";
-    let products = await Product.find(filter).sort({ order: 1, createdAt: -1 }).skip(Number(offset)).limit(Number(limit)).populate("categoryId");
-    if (category) products = products.filter((p: any) => p.categoryId?.name?.toLowerCase() === String(category).toLowerCase());
+    
+    let products = await Product.find(filter).sort({ order: 1, createdAt: -1 }).skip(Number(offset)).limit(Number(limit)).populate("categoryId").populate("categoryIds");
+    
+    // Filter by category if specified
+    if (category) {
+      products = products.filter((p: any) => {
+        // Check old single category system (by name)
+        const oldCategoryMatch = p.categoryId?.name?.toLowerCase() === String(category).toLowerCase() || p.categoryId?.slug?.toLowerCase() === String(category).toLowerCase();
+        
+        // Check new multi-category system (by slug or name)
+        const newCategoryMatch = p.categoryIds && p.categoryIds.some((cat: any) => 
+          cat.slug?.toLowerCase() === String(category).toLowerCase() || 
+          cat.name?.toLowerCase() === String(category).toLowerCase()
+        );
+        
+        return oldCategoryMatch || newCategoryMatch;
+      });
+    }
+    
     const result = await Promise.all(products.map((p: any) => mapProduct(p, p.categoryId?.name)));
     res.json({ products: result, total: result.length });
   } catch (err) {
@@ -74,13 +113,14 @@ router.get("/", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { name, description, shortDescription, price, discountPrice, categoryId, mainImage, images, stock, order, featured, referralCode } = req.body;
+    const { name, description, shortDescription, price, discountPrice, categoryId, categoryIds, mainImage, images, stock, order, featured, referralCode } = req.body;
     const slug = slugify(name) + "-" + Date.now();
     const product = await Product.create({
       name, slug, description, shortDescription,
       price: Number(price),
       discountPrice: discountPrice ? Number(discountPrice) : undefined,
       categoryId: categoryId || undefined,
+      categoryIds: categoryIds || [],
       mainImage: mainImage || "",
       images: images || [],
       stock: Number(stock),
@@ -117,12 +157,13 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { name, description, shortDescription, price, discountPrice, categoryId, mainImage, images, stock, order, featured, referralCode } = req.body;
+    const { name, description, shortDescription, price, discountPrice, categoryId, categoryIds, mainImage, images, stock, order, featured, referralCode } = req.body;
     const product = await Product.findByIdAndUpdate(req.params.id, {
       name, description, shortDescription,
       price: Number(price),
       discountPrice: discountPrice ? Number(discountPrice) : undefined,
       categoryId: categoryId || undefined,
+      categoryIds: categoryIds || [],
       mainImage: mainImage || "",
       images: images || [],
       stock: Number(stock),

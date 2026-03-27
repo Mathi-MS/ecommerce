@@ -6,6 +6,7 @@ import { useGetMe, useListOffers } from "@/lib/api";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
+import { FloatingCart } from "@/components/FloatingCart";
 import { useQuery } from "@tanstack/react-query";
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -164,6 +165,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           © {new Date().getFullYear()} Elowell Natural Products. All rights reserved.
         </div>
       </footer>
+
+      {/* Floating Cart */}
+      <FloatingCart />
     </div>
   );
 }

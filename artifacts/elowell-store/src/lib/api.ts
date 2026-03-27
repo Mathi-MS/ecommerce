@@ -25,6 +25,8 @@ export interface Product {
   category: string;
   categoryName?: string;
   categoryId?: string;
+  categoryIds?: string[];
+  categories?: { id: string; name: string; slug: string }[];
   stock: number;
   isActive: boolean;
   featured?: boolean;
@@ -108,14 +110,64 @@ export interface Category {
   createdAt?: string;
 }
 
-export interface Review {
+export interface Banner {
   id: string;
-  productId: string;
-  userId?: string;
-  reviewerName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
+  title: string;
+  subtitle?: string;
+  description: string;
+  imageUrl: string;
+  button1Text?: string;
+  button1Link?: string;
+  button2Text?: string;
+  button2Link?: string;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface AboutSection {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  features: string[];
+  buttonText: string;
+  buttonLink: string;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface HomeSection {
+  id: string;
+  type: 'about' | 'featured-products' | 'categories' | 'testimonials';
+  title: string;
+  subtitle?: string;
+  order: number;
+  isActive: boolean;
+  config: {
+    // For about sections
+    description?: string;
+    imageUrl?: string;
+    features?: string[];
+    buttonText?: string;
+    buttonLink?: string;
+    
+    // For featured products
+    productLimit?: number;
+    showFeatured?: boolean;
+    category?: string;
+    selectedProductIds?: string[];
+    viewAllText?: string;
+    viewAllLink?: string;
+    
+    // For categories
+    categoryIds?: string[];
+    displayStyle?: 'grid' | 'carousel';
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DashboardStats {
@@ -262,14 +314,26 @@ export const useAddToCart = () => {
   return { mutate, isPending, isLoading: isPending };
 };
 
-export const useListProducts = (params?: any) => {
+export const useListProducts = (params?: { category?: string; featured?: boolean; limit?: number; ids?: string[] }) => {
   const [data, setData] = useState<{ products: Product[] }>({ products: [] });
   const [isLoading, setIsLoading] = useState(true);
   
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const response = await apiCall('/api/products');
+      let url = '/api/products';
+      const queryParams = new URLSearchParams();
+      
+      if (params?.category) queryParams.append('category', params.category);
+      if (params?.featured !== undefined) queryParams.append('featured', String(params.featured));
+      if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
+      if (params?.ids && params.ids.length > 0) queryParams.append('ids', params.ids.join(','));
+      
+      if (queryParams.toString()) {
+        url += '?' + queryParams.toString();
+      }
+      
+      const response = await apiCall(url);
       setData({ products: response.products || response });
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -281,7 +345,7 @@ export const useListProducts = (params?: any) => {
   
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [params?.category, params?.featured, params?.limit, params?.ids?.join(',')]);
   
   return { data, isLoading, refetch: fetchProducts };
 };
@@ -651,4 +715,297 @@ export const useGetProductReviews = (id?: string) => {
   }, [id]);
   
   return { data, isLoading, refetch: fetchReviews };
+};
+
+export const useListBanners = (params?: { active?: boolean }) => {
+  const [data, setData] = useState<Banner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchBanners = async () => {
+    try {
+      setIsLoading(true);
+      let url = '/api/banners';
+      if (params?.active !== undefined) {
+        url += `?active=${params.active}`;
+      }
+      const banners = await apiCall(url);
+      setData(banners);
+    } catch (error) {
+      console.error('Failed to fetch banners:', error);
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchBanners();
+  }, [params?.active]);
+  
+  return { data, isLoading, refetch: fetchBanners };
+};
+
+export const useCreateBanner = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: Partial<Banner> }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall('/api/banners', {
+        method: 'POST',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUpdateBanner = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string; data: Partial<Banner> }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/banners/${options.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useDeleteBanner = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/banners/${options.id}`, {
+        method: 'DELETE',
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useListAboutSections = () => {
+  const [data, setData] = useState<AboutSection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchAboutSections = async () => {
+    try {
+      setIsLoading(true);
+      const aboutSections = await apiCall('/api/about');
+      setData(aboutSections);
+    } catch (error) {
+      console.error('Failed to fetch about sections:', error);
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchAboutSections();
+  }, []);
+  
+  return { data, isLoading, refetch: fetchAboutSections };
+};
+
+export const useGetAboutSection = (id?: string) => {
+  const [data, setData] = useState<AboutSection | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchAboutSection = async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const aboutSection = await apiCall(`/api/about/${id}`);
+      setData(aboutSection);
+    } catch (error) {
+      console.error('Failed to fetch about section:', error);
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchAboutSection();
+  }, [id]);
+  
+  return { data, isLoading, refetch: fetchAboutSection };
+};
+
+export const useCreateAboutSection = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: Partial<AboutSection> }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall('/api/about', {
+        method: 'POST',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUpdateAboutSection = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string; data: Partial<AboutSection> }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/about/${options.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useListHomeSections = () => {
+  const [data, setData] = useState<HomeSection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchHomeSections = async () => {
+    try {
+      setIsLoading(true);
+      const sections = await apiCall('/api/home-sections');
+      // Map MongoDB _id to id for consistency
+      const mappedSections = sections.map((section: any) => ({
+        ...section,
+        id: section._id || section.id
+      }));
+      setData(mappedSections);
+    } catch (error) {
+      console.error('Failed to fetch home sections:', error);
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchHomeSections();
+  }, []);
+  
+  return { data, isLoading, refetch: fetchHomeSections };
+};
+
+export const useCreateHomeSection = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: Partial<HomeSection> }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall('/api/home-sections', {
+        method: 'POST',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUpdateHomeSection = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string; data: Partial<HomeSection> }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/home-sections/${options.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(options.data),
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useDeleteHomeSection = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/home-sections/${options.id}`, {
+        method: 'DELETE',
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
 };

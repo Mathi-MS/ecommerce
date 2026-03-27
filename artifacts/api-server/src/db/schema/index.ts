@@ -7,3 +7,6 @@ export * from "./orders.js";
 export * from "./referrals.js";
 export * from "./faq.js";
 export * from "./offers.js";
+export * from "./banners.js";
+export * from "./about.js";
+export * from "./home-sections.js";

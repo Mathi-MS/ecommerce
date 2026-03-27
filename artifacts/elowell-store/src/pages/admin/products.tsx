@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useApiOptions } from "@/store/session";
+import { useListCategories } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit, Eye, Star, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const QUERY_KEY = ["/api/products"];
 
-const EMPTY = { name: "", shortDescription: "", description: "", price: "", discountPrice: "", stock: "", order: "", mainImage: "", images: [] as string[] };
+const EMPTY = { name: "", shortDescription: "", description: "", price: "", discountPrice: "", stock: "", order: "", mainImage: "", images: [] as string[], categoryIds: [] as string[], featured: false };
 
 async function uploadImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -45,6 +47,8 @@ export default function AdminProducts() {
     },
   });
 
+  const { data: categories } = useListCategories();
+
   const [dialog, setDialog] = useState<"none" | "form" | "view">("none");
   const [editing, setEditing] = useState<any>(null);
   const [viewing, setViewing] = useState<any>(null);
@@ -70,6 +74,8 @@ export default function AdminProducts() {
       price: String(p.price), discountPrice: String(p.discountPrice ?? ""),
       stock: String(p.stock), order: String(p.order ?? ""),
       mainImage: p.mainImage || "", images: p.images || [],
+      categoryIds: p.categoryIds || [],
+      featured: p.featured || false,
     });
     setError("");
     setDialog("form");
@@ -110,7 +116,8 @@ export default function AdminProducts() {
         name: form.name, shortDescription: form.shortDescription, description: form.description,
         price: Number(form.price), discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
         stock: Number(form.stock), order: Number(form.order) || 0,
-        mainImage: form.mainImage, images: form.images, featured: false,
+        mainImage: form.mainImage, images: form.images, featured: form.featured,
+        categoryIds: form.categoryIds,
       };
       const response = editing 
         ? await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${editing.id}`, { method: "PUT", headers: authHeaders, body: JSON.stringify(body) })
@@ -168,12 +175,35 @@ export default function AdminProducts() {
               <Input type="number" placeholder="Order" value={form.order} onChange={e => setForm(f => ({ ...f, order: e.target.value }))} />
             </div>
 
+            {/* Featured Toggle */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="featured"
+                checked={form.featured}
+                onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="featured" className="text-sm font-medium">Featured Product</label>
+            </div>
+
+            {/* Categories */}
+            <div>
+              <p className="text-sm font-medium mb-2">Categories</p>
+              <MultiSelect
+                options={categories?.map(cat => ({ id: cat.id, name: cat.name })) || []}
+                selected={form.categoryIds}
+                onChange={(selected) => setForm(f => ({ ...f, categoryIds: selected }))}
+                placeholder="Select categories..."
+              />
+            </div>
+
             {/* Main Image */}
             <div>
               <p className="text-sm font-medium mb-2">Main Image (single)</p>
               <label className="flex items-center gap-3 cursor-pointer">
                 <div className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30">
-                  {form.mainImage ? <img src={`https://be-ecommerce-w2gz.onrender.com${form.mainImage}`} className="w-full h-full object-cover" /> : <Plus className="h-6 w-6 text-muted-foreground" />}
+                  {form.mainImage ? <img src={`${form.mainImage}`} className="w-full h-full object-cover" /> : <Plus className="h-6 w-6 text-muted-foreground" />}
                 </div>
                 <span className="text-sm text-muted-foreground">Click to upload main image</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
@@ -186,7 +216,7 @@ export default function AdminProducts() {
               <div className="flex flex-wrap gap-3">
                 {form.images.map((img, idx) => (
                   <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
-                    <img src={`https://be-ecommerce-w2gz.onrender.com${img}`} className="w-full h-full object-cover" />
+                    <img src={`${img}`} className="w-full h-full object-cover" />
                     <button type="button" onClick={() => removeProductImage(idx)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5"><X className="h-3 w-3 text-white" /></button>
                   </div>
                 ))}
@@ -244,6 +274,18 @@ export default function AdminProducts() {
                   )}
                 </div>
                 <div><p className="text-sm text-muted-foreground font-medium mb-1">Short Description</p><p className="text-sm">{viewing.shortDescription}</p></div>
+                {viewing.categories && viewing.categories.length > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground font-medium mb-1">Categories</p>
+                    <div className="flex flex-wrap gap-1">
+                      {viewing.categories.map((cat: any) => (
+                        <span key={cat.id} className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs">
+                          {cat.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div><p className="text-sm text-muted-foreground font-medium mb-1">Full Description</p><p className="text-sm whitespace-pre-line">{viewing.description}</p></div>
               </div>
             </>
@@ -259,34 +301,53 @@ export default function AdminProducts() {
               <th className="p-4 font-medium w-8">#</th>
               <th className="p-4 font-medium w-14">Image</th>
               <th className="p-4 font-medium">Name</th>
+              <th className="p-4 font-medium">Categories</th>
               <th className="p-4 font-medium">Base Price</th>
               <th className="p-4 font-medium">Selling Price</th>
               <th className="p-4 font-medium">Stock</th>
+              <th className="p-4 font-medium">Featured</th>
               <th className="p-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              <tr><td colSpan={7} className="p-8 text-center">Loading...</td></tr>
+              <tr><td colSpan={9} className="p-8 text-center">Loading...</td></tr>
             ) : products.length === 0 ? (
-              <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No products yet</td></tr>
-            ) : products.map((p: any) => (
-              <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                <td className="p-4 text-muted-foreground text-sm">{p.order}</td>
-                <td className="p-4">
-                  <img src={p.mainImage || p.images?.[0] || ""} alt="" className="w-10 h-10 rounded-lg object-cover bg-muted" />
-                </td>
-                <td className="p-4 font-medium">{p.name}</td>
-                <td className="p-4">₹{p.price?.toFixed(2)}</td>
-                <td className="p-4">{p.discountPrice ? `₹${p.discountPrice.toFixed(2)}` : "—"}</td>
-                <td className="p-4">{p.stock}</td>
-                <td className="p-4 text-right flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openView(p)}><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Edit className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
-                </td>
-              </tr>
-            ))}
+              <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No products yet</td></tr>
+            ) : (
+              products.map((p: any) => (
+                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-4 text-muted-foreground text-sm">{p.order}</td>
+                  <td className="p-4">
+                    <img src={p.mainImage || p.images?.[0] || ""} alt="" className="w-10 h-10 rounded-lg object-cover bg-muted" />
+                  </td>
+                  <td className="p-4 font-medium">{p.name}</td>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-1 max-w-32">
+                      {p.categories?.slice(0, 2).map((cat: any) => (
+                        <span key={cat.id} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary">
+                          {cat.name}
+                        </span>
+                      ))}
+                      {p.categories?.length > 2 && (
+                        <span className="text-xs text-muted-foreground">+{p.categories.length - 2}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4">₹{p.price?.toFixed(2)}</td>
+                  <td className="p-4">{p.discountPrice ? `₹${p.discountPrice.toFixed(2)}` : "—"}</td>
+                  <td className="p-4">{p.stock}</td>
+                  <td className="p-4">
+                    {p.featured && <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />}
+                  </td>
+                  <td className="p-4 text-right flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openView(p)}><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -23,9 +23,11 @@ import AdminCoupons from "./pages/admin/coupons";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminProducts from "./pages/admin/products";
 import AdminCategories from "./pages/admin/categories";
+import AdminBanners from "./pages/admin/banners";
 import AdminOrders from "./pages/admin/orders";
 import AdminOffers from "./pages/admin/offers";
 import AdminFaq from "./pages/admin/faq";
+import AdminHomeSections from "./pages/admin/home-sections";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,8 @@ function Router() {
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/banners" component={AdminBanners} />
+      <Route path="/admin/home-sections" component={AdminHomeSections} />
       <Route path="/admin/orders" component={AdminOrders} />
       <Route path="/admin/offers" component={AdminOffers} />
       <Route path="/admin/faq" component={AdminFaq} />
