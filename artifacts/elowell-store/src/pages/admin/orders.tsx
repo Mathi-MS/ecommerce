@@ -56,7 +56,7 @@ export default function AdminOrders() {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (debouncedSearch) params.set("search", debouncedSearch);
-      const url = params.toString() ? `/api/orders?${params.toString()}` : '/api/orders';
+      const url = params.toString() ? `${import.meta.env.VITE_API_BASE_URL}/api/orders?${params.toString()}` : `${import.meta.env.VITE_API_BASE_URL}/api/orders`;
       const res = await fetch(url, { headers: authHeaders });
       return res.json();
     },

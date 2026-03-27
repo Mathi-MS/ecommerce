@@ -32,7 +32,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Categories', path: '/admin/categories', icon: FolderOpen },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
-    { name: 'Referrals', path: '/admin/referrals', icon: Tag },
+    // { name: 'Referrals', path: '/admin/referrals', icon: Tag },
     { name: 'Coupons', path: '/admin/coupons', icon: Ticket },
     { name: 'Offers', path: '/admin/offers', icon: Megaphone },
     { name: 'FAQ', path: '/admin/faq', icon: HelpCircle },
