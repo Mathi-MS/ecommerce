@@ -469,7 +469,7 @@ export const useCreateOrder = () => {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       
-      const response = await fetch('/api/orders', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers,
         body: JSON.stringify(options.data),

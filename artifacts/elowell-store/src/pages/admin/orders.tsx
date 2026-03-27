@@ -68,7 +68,7 @@ export default function AdminOrders() {
   const { data: allOrders = [] } = useQuery<any[]>({
     queryKey: ["/api/orders", "all"],
     queryFn: async () => {
-      const res = await fetch("/api/orders", { headers: authHeaders });
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, { headers: authHeaders });
       return res.json();
     },
     staleTime: 30000,

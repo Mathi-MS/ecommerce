@@ -79,7 +79,7 @@ const ordersApi = {
   },
 
   getUserOrders: async () => {
-    return apiCall('/api/orders/user');
+    return apiCall('$/api/orders/user');
   },
 
   createOrder: async (orderData: {
@@ -94,14 +94,14 @@ const ordersApi = {
     userId?: string;
     referralCode?: string;
   }) => {
-    return apiCall('/api/orders', {
+    return apiCall(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
   },
 
   updateOrderStatus: async (id: string, status: string) => {
-    return apiCall(`/api/orders/${id}/status`, {
+    return apiCall(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });

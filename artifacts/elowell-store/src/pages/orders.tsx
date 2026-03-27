@@ -29,7 +29,7 @@ export default function OrderHistory() {
   const { data: orders = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/orders", "user"],
     queryFn: async () => {
-      const res = await fetch("/api/orders/user", { headers: authHeaders });
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/user`, { headers: authHeaders });
       if (!res.ok) throw new Error("Failed to fetch orders");
       return res.json();
     },
