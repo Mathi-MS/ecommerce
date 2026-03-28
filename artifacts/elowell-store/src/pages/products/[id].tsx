@@ -11,7 +11,7 @@ import { ProductCard } from "@/components/ProductCard";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const productId = parseInt(id, 10);
+  const productId = id as unknown as number;
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
 

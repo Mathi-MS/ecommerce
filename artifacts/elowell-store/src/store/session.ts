@@ -52,7 +52,7 @@ export function useApiOptions() {
   const token = useSessionStore((s) => s.token);
   return {
     request: {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } as Record<string, string>
     }
   };
 }

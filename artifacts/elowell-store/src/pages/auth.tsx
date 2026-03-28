@@ -63,13 +63,13 @@ export default function AuthPage() {
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    
+
     script.onload = () => {
       if (window.google) {
         initializeGoogle();
       }
     };
-    
+
     script.onerror = () => {
       console.error('Failed to load Google Sign-In script');
     };
@@ -131,62 +131,60 @@ export default function AuthPage() {
 
   // Render Google button when loaded
   React.useEffect(() => {
-    if (googleLoaded && window.google) {
-      const renderButton = (elementId: string) => {
-        const element = document.getElementById(elementId);
-        if (element && !element.hasChildNodes()) {
-          try {
-            window.google.accounts.id.renderButton(element, {
-              theme: 'outline',
-              size: 'large',
-              width: element.offsetWidth || 300,
-              text: 'continue_with',
-              shape: 'rectangular'
-            });
-          } catch (error) {
-            console.error('Failed to render Google button:', error);
-          }
+    if (!googleLoaded || !window.google) return;
+    const renderButton = (elementId: string) => {
+      const element = document.getElementById(elementId);
+      if (element && !element.hasChildNodes()) {
+        try {
+          window.google.accounts.id.renderButton(element, {
+            theme: 'outline',
+            size: 'large',
+            width: element.offsetWidth || 300,
+            text: 'continue_with',
+            shape: 'rectangular'
+          });
+        } catch (error) {
+          console.error('Failed to render Google button:', error);
         }
-      };
+      }
+    };
 
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        renderButton('google-signin-button-login');
-        renderButton('google-signin-button-signup');
-      }, 100);
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      renderButton('google-signin-button-login');
+      renderButton('google-signin-button-signup');
+    }, 100);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [googleLoaded, step, activeTab]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginData)
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(loginData)
+    })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setToken(data.token);
+          setUser(data.user);
+          toast({ title: "Success", description: "Logged in successfully" });
+          setLocation('/admin/dashboard');
+        } else {
+          toast({ title: "Error", description: data.error, variant: "destructive" });
+        }
+      })
+      .catch(() => {
+        toast({ title: "Error", description: "Login failed", variant: "destructive" });
+      })
+      .finally(() => {
+        setLoading(false);
       });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setToken(data.token);
-        setUser(data.user);
-        toast({ title: "Success", description: "Logged in successfully" });
-        setLocation('/admin/dashboard');
-      } else {
-        toast({ title: "Error", description: data.error, variant: "destructive" });
-      }
-    } catch (error) {
-      toast({ title: "Error", description: "Login failed", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {

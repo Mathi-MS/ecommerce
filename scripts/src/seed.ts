@@ -1,7 +1,13 @@
-import { connectDB, User, Category, Product, Faq, ReferralCode } from "@workspace/db";
+import { config } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: resolve(__dirname, "../../artifacts/api-server/.env") });
+
 async function seed() {
+  const { connectDB, User, Category, Product, Faq, ReferralCode } = await import("@workspace/db");
   await connectDB();
   console.log("Seeding database...");
 
@@ -9,7 +15,7 @@ async function seed() {
   const existingAdmin = await User.findOne({ email: "admin@elowell.com" });
   if (!existingAdmin) {
     const hashed = await bcrypt.hash("admin123", 10);
-    await User.create({ name: "Elowell Admin", email: "admin@elowell.com", password: hashed, role: "admin" });
+    await User.create({ name: "Elowell Admin", email: "admin@elowell.com", password: hashed, role: "admin", isVerified: true });
     console.log("Admin user created: admin@elowell.com / admin123");
   }
 
@@ -22,7 +28,7 @@ async function seed() {
     const existing = await User.findOne({ email: c.email });
     if (!existing) {
       const hashed = await bcrypt.hash(c.password, 10);
-      await User.create({ ...c, password: hashed, role: "customer" });
+      await User.create({ ...c, password: hashed, role: "customer", isVerified: true });
       console.log(`Customer created: ${c.email} / ${c.password}`);
     }
   }

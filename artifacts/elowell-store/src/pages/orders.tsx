@@ -1,1 +1,160 @@
-import { AppLayout } from \"@/components/layout/AppLayout\";\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Button } from \"@/components/ui/button\";\nimport { useGetOrders } from \"@workspace/api-client-react\";\nimport { useApiOptions } from \"@/store/session\";\nimport { Package, Calendar, CreditCard, Truck } from \"lucide-react\";\nimport { Link } from \"wouter\";\n\nexport default function OrderHistory() {\n  const apiOpts = useApiOptions();\n  const { data: orders, isLoading } = useGetOrders(apiOpts);\n\n  const getStatusColor = (status: string) => {\n    switch (status.toLowerCase()) {\n      case 'pending': return 'default';\n      case 'processing': return 'secondary';\n      case 'shipped': return 'outline';\n      case 'delivered': return 'default';\n      case 'cancelled': return 'destructive';\n      default: return 'secondary';\n    }\n  };\n\n  const getStatusIcon = (status: string) => {\n    switch (status.toLowerCase()) {\n      case 'pending': return <CreditCard className=\"h-4 w-4\" />;\n      case 'processing': return <Package className=\"h-4 w-4\" />;\n      case 'shipped': return <Truck className=\"h-4 w-4\" />;\n      case 'delivered': return <Package className=\"h-4 w-4\" />;\n      default: return <Package className=\"h-4 w-4\" />;\n    }\n  };\n\n  if (isLoading) {\n    return (\n      <AppLayout>\n        <div className=\"max-w-4xl mx-auto px-4 py-8\">\n          <div className=\"space-y-4\">\n            {[...Array(3)].map((_, i) => (\n              <Card key={i}>\n                <CardContent className=\"p-6\">\n                  <div className=\"animate-pulse space-y-3\">\n                    <div className=\"h-4 bg-muted rounded w-1/4\"></div>\n                    <div className=\"h-3 bg-muted rounded w-1/2\"></div>\n                    <div className=\"h-3 bg-muted rounded w-1/3\"></div>\n                  </div>\n                </CardContent>\n              </Card>\n            ))}\n          </div>\n        </div>\n      </AppLayout>\n    );\n  }\n\n  return (\n    <AppLayout>\n      <div className=\"max-w-4xl mx-auto px-4 py-8\">\n        <div className=\"mb-8\">\n          <h1 className=\"text-3xl font-bold mb-2\">Order History</h1>\n          <p className=\"text-muted-foreground\">Track and manage your orders</p>\n        </div>\n\n        {orders?.length ? (\n          <div className=\"space-y-6\">\n            {orders.map((order: any) => (\n              <Card key={order.id}>\n                <CardHeader>\n                  <div className=\"flex items-center justify-between\">\n                    <div>\n                      <CardTitle className=\"text-lg\">Order #{order.id.slice(-8).toUpperCase()}</CardTitle>\n                      <CardDescription className=\"flex items-center gap-2 mt-1\">\n                        <Calendar className=\"h-4 w-4\" />\n                        {new Date(order.createdAt).toLocaleDateString('en-US', {\n                          year: 'numeric',\n                          month: 'long',\n                          day: 'numeric'\n                        })}\n                      </CardDescription>\n                    </div>\n                    <div className=\"text-right\">\n                      <Badge variant={getStatusColor(order.status)} className=\"mb-2\">\n                        <span className=\"flex items-center gap-1\">\n                          {getStatusIcon(order.status)}\n                          {order.status}\n                        </span>\n                      </Badge>\n                      <div className=\"text-lg font-semibold\">\n                        ₹{order.total?.toFixed(2) || '0.00'}\n                      </div>\n                    </div>\n                  </div>\n                </CardHeader>\n                <CardContent>\n                  <div className=\"space-y-4\">\n                    {/* Order Items */}\n                    <div className=\"space-y-2\">\n                      {order.items?.map((item: any, index: number) => (\n                        <div key={index} className=\"flex items-center gap-3 p-3 bg-muted/50 rounded-lg\">\n                          {item.product?.images?.[0] && (\n                            <img \n                              src={item.product.images[0]} \n                              alt={item.product.name}\n                              className=\"w-12 h-12 object-cover rounded\"\n                            />\n                          )}\n                          <div className=\"flex-1\">\n                            <h4 className=\"font-medium\">{item.product?.name || 'Product'}</h4>\n                            <p className=\"text-sm text-muted-foreground\">\n                              Qty: {item.quantity} × ₹{item.price?.toFixed(2) || '0.00'}\n                            </p>\n                          </div>\n                          <div className=\"text-right\">\n                            <p className=\"font-medium\">₹{((item.quantity || 0) * (item.price || 0)).toFixed(2)}</p>\n                          </div>\n                        </div>\n                      ))}\n                    </div>\n\n                    {/* Shipping Address */}\n                    {order.shippingAddress && (\n                      <div className=\"border-t pt-4\">\n                        <h4 className=\"font-medium mb-2\">Shipping Address</h4>\n                        <div className=\"text-sm text-muted-foreground\">\n                          <p>{order.shippingAddress.name}</p>\n                          <p>{order.shippingAddress.street}</p>\n                          <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>\n                          {order.shippingAddress.phone && <p>Phone: {order.shippingAddress.phone}</p>}\n                        </div>\n                      </div>\n                    )}\n\n                    {/* Order Summary */}\n                    <div className=\"border-t pt-4\">\n                      <div className=\"flex justify-between text-sm\">\n                        <span>Subtotal:</span>\n                        <span>₹{(order.total - (order.shippingCost || 0)).toFixed(2)}</span>\n                      </div>\n                      {order.shippingCost > 0 && (\n                        <div className=\"flex justify-between text-sm\">\n                          <span>Shipping:</span>\n                          <span>₹{order.shippingCost.toFixed(2)}</span>\n                        </div>\n                      )}\n                      <div className=\"flex justify-between font-semibold border-t pt-2 mt-2\">\n                        <span>Total:</span>\n                        <span>₹{order.total.toFixed(2)}</span>\n                      </div>\n                    </div>\n\n                    {/* Actions */}\n                    <div className=\"flex gap-2 pt-2\">\n                      {order.status === 'delivered' && (\n                        <Button variant=\"outline\" size=\"sm\">\n                          Leave Review\n                        </Button>\n                      )}\n                      {['pending', 'processing'].includes(order.status.toLowerCase()) && (\n                        <Button variant=\"outline\" size=\"sm\">\n                          Cancel Order\n                        </Button>\n                      )}\n                      <Button variant=\"outline\" size=\"sm\">\n                        Track Order\n                      </Button>\n                    </div>\n                  </div>\n                </CardContent>\n              </Card>\n            ))}\n          </div>\n        ) : (\n          <Card>\n            <CardContent className=\"p-12 text-center\">\n              <Package className=\"h-12 w-12 mx-auto text-muted-foreground mb-4\" />\n              <h3 className=\"text-lg font-semibold mb-2\">No orders yet</h3>\n              <p className=\"text-muted-foreground mb-4\">\n                You haven't placed any orders yet. Start shopping to see your order history here.\n              </p>\n              <Button asChild>\n                <Link href=\"/products\">Start Shopping</Link>\n              </Button>\n            </CardContent>\n          </Card>\n        )}\n      </div>\n    </AppLayout>\n  );\n}
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useListOrders } from "@workspace/api-client-react";
+import { useApiOptions } from "@/store/session";
+import { Package, Calendar, CreditCard, Truck } from "lucide-react";
+import { Link } from "wouter";
+
+export default function OrderHistory() {
+  const apiOpts = useApiOptions();
+  const { data: orders, isLoading } = useListOrders(undefined, apiOpts);
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending': return 'default';
+      case 'processing': return 'secondary';
+      case 'shipped': return 'outline';
+      case 'delivered': return 'default';
+      case 'cancelled': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending': return <CreditCard className="h-4 w-4" />;
+      case 'processing': return <Package className="h-4 w-4" />;
+      case 'shipped': return <Truck className="h-4 w-4" />;
+      case 'delivered': return <Package className="h-4 w-4" />;
+      default: return <Package className="h-4 w-4" />;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="animate-pulse space-y-3">
+                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="h-3 bg-muted rounded w-1/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Order History</h1>
+          <p className="text-muted-foreground">Track and manage your orders</p>
+        </div>
+
+        {orders?.length ? (
+          <div className="space-y-6">
+            {orders.map((order: any) => (
+              <Card key={order.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Order #{order.id.slice(-8).toUpperCase()}</CardTitle>
+                      <CardDescription className="flex items-center gap-2 mt-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </CardDescription>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={getStatusColor(order.status) as any} className="mb-2">
+                        <span className="flex items-center gap-1">
+                          {getStatusIcon(order.status)}
+                          {order.status}
+                        </span>
+                      </Badge>
+                      <div className="text-lg font-semibold">&#8377;{order.total?.toFixed(2) || '0.00'}</div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      {order.items?.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                          {item.product?.images?.[0] && (
+                            <img src={item.product.images[0]} alt={item.product.name} className="w-12 h-12 object-cover rounded" />
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-medium">{item.product?.name || 'Product'}</h4>
+                            <p className="text-sm text-muted-foreground">Qty: {item.quantity} &times; &#8377;{item.price?.toFixed(2) || '0.00'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">&#8377;{((item.quantity || 0) * (item.price || 0)).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {order.shippingAddress && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium mb-2">Shipping Address</h4>
+                        <div className="text-sm text-muted-foreground">
+                          <p>{order.shippingAddress.name}</p>
+                          <p>{order.shippingAddress.street}</p>
+                          <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
+                          {order.shippingAddress.phone && <p>Phone: {order.shippingAddress.phone}</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span>&#8377;{(order.total - (order.shippingCost || 0)).toFixed(2)}</span>
+                      </div>
+                      {order.shippingCost > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>Shipping:</span>
+                          <span>&#8377;{order.shippingCost.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold border-t pt-2 mt-2">
+                        <span>Total:</span>
+                        <span>&#8377;{order.total.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      {order.status === 'delivered' && <Button variant="outline" size="sm">Leave Review</Button>}
+                      {['pending', 'processing'].includes(order.status.toLowerCase()) && <Button variant="outline" size="sm">Cancel Order</Button>}
+                      <Button variant="outline" size="sm">Track Order</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
+              <p className="text-muted-foreground mb-4">You haven't placed any orders yet. Start shopping to see your order history here.</p>
+              <Button asChild><Link href="/products">Start Shopping</Link></Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </AppLayout>
+  );
+}

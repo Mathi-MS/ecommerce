@@ -16,7 +16,7 @@ function generateOTP(): string {
 // Send OTP via email using nodemailer
 async function sendOTPEmail(email: string, otp: string, type: 'signup' | 'login' | 'reset' = 'signup') {
   try {
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,

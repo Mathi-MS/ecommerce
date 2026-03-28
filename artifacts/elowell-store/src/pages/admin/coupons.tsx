@@ -1,1 +1,128 @@
-import { useState } from \"react\";\nimport { AdminLayout } from \"@/components/layout/AdminLayout\";\nimport { Button } from \"@/components/ui/button\";\nimport { Input } from \"@/components/ui/input\";\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from \"@/components/ui/dialog\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { useToast } from \"@/hooks/use-toast\";\nimport { useListReferralCodes, useCreateReferralCode, useUpdateReferralCode, useDeleteReferralCode } from \"@workspace/api-client-react\";\nimport { useApiOptions } from \"@/store/session\";\nimport { Plus, Edit, Trash2, Copy, Eye, EyeOff } from \"lucide-react\";\nimport { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from \"@/components/ui/select\";\nimport { Switch } from \"@/components/ui/switch\";\n\nexport default function AdminCoupons() {\n  const { toast } = useToast();\n  const apiOpts = useApiOptions();\n  const [dialogOpen, setDialogOpen] = useState(false);\n  const [editingCoupon, setEditingCoupon] = useState<any>(null);\n  \n  const [formData, setFormData] = useState({\n    code: '',\n    discountPercent: 10,\n    maxUsage: 100,\n    isActive: true\n  });\n\n  const { data: coupons, refetch } = useListReferralCodes(apiOpts);\n  const createMutation = useCreateReferralCode(apiOpts);\n  const updateMutation = useUpdateReferralCode(apiOpts);\n  const deleteMutation = useDeleteReferralCode(apiOpts);\n\n  const handleSubmit = async (e: React.FormEvent) => {\n    e.preventDefault();\n    \n    try {\n      if (editingCoupon) {\n        await updateMutation.mutateAsync({\n          id: editingCoupon.id,\n          data: formData\n        });\n        toast({ title: \"Success\", description: \"Coupon updated successfully\" });\n      } else {\n        await createMutation.mutateAsync({ data: formData });\n        toast({ title: \"Success\", description: \"Coupon created successfully\" });\n      }\n      \n      setDialogOpen(false);\n      setEditingCoupon(null);\n      setFormData({ code: '', discountPercent: 10, maxUsage: 100, isActive: true });\n      refetch();\n    } catch (error) {\n      toast({ title: \"Error\", description: \"Failed to save coupon\", variant: \"destructive\" });\n    }\n  };\n\n  const handleEdit = (coupon: any) => {\n    setEditingCoupon(coupon);\n    setFormData({\n      code: coupon.code,\n      discountPercent: coupon.discountPercent,\n      maxUsage: coupon.maxUsage || 100,\n      isActive: coupon.isActive\n    });\n    setDialogOpen(true);\n  };\n\n  const handleDelete = async (id: string) => {\n    if (confirm('Are you sure you want to delete this coupon?')) {\n      try {\n        await deleteMutation.mutateAsync({ id });\n        toast({ title: \"Success\", description: \"Coupon deleted successfully\" });\n        refetch();\n      } catch (error) {\n        toast({ title: \"Error\", description: \"Failed to delete coupon\", variant: \"destructive\" });\n      }\n    }\n  };\n\n  const handleToggleStatus = async (coupon: any) => {\n    try {\n      await updateMutation.mutateAsync({\n        id: coupon.id,\n        data: {\n          ...coupon,\n          isActive: !coupon.isActive\n        }\n      });\n      toast({ title: \"Success\", description: \"Coupon status updated\" });\n      refetch();\n    } catch (error) {\n      toast({ title: \"Error\", description: \"Failed to update coupon status\", variant: \"destructive\" });\n    }\n  };\n\n  const copyToClipboard = (code: string) => {\n    navigator.clipboard.writeText(code);\n    toast({ title: \"Copied\", description: `Coupon code \"${code}\" copied to clipboard` });\n  };\n\n  const generateRandomCode = () => {\n    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';\n    let result = '';\n    for (let i = 0; i < 8; i++) {\n      result += chars.charAt(Math.floor(Math.random() * chars.length));\n    }\n    setFormData(prev => ({ ...prev, code: result }));\n  };\n\n  return (\n    <AdminLayout>\n      <div className=\"space-y-6\">\n        <div className=\"flex justify-between items-center\">\n          <div>\n            <h1 className=\"text-3xl font-bold\">Coupon Management</h1>\n            <p className=\"text-muted-foreground\">Manage discount coupons and referral codes</p>\n          </div>\n          \n          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>\n            <DialogTrigger asChild>\n              <Button onClick={() => {\n                setEditingCoupon(null);\n                setFormData({ code: '', discountPercent: 10, maxUsage: 100, isActive: true });\n              }}>\n                <Plus className=\"h-4 w-4 mr-2\" />\n                Add Coupon\n              </Button>\n            </DialogTrigger>\n            <DialogContent className=\"sm:max-w-md\">\n              <DialogHeader>\n                <DialogTitle>{editingCoupon ? 'Edit Coupon' : 'Add New Coupon'}</DialogTitle>\n              </DialogHeader>\n              <form onSubmit={handleSubmit} className=\"space-y-4\">\n                <div>\n                  <label className=\"text-sm font-medium mb-2 block\">Coupon Code</label>\n                  <div className=\"flex gap-2\">\n                    <Input\n                      value={formData.code}\n                      onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}\n                      placeholder=\"Enter coupon code\"\n                      required\n                      className=\"flex-1\"\n                    />\n                    <Button type=\"button\" variant=\"outline\" onClick={generateRandomCode}>\n                      Generate\n                    </Button>\n                  </div>\n                </div>\n                \n                <div>\n                  <label className=\"text-sm font-medium mb-2 block\">Discount Percentage</label>\n                  <Input\n                    type=\"number\"\n                    value={formData.discountPercent}\n                    onChange={(e) => setFormData(prev => ({ ...prev, discountPercent: parseInt(e.target.value) || 0 }))}\n                    min={1}\n                    max={100}\n                    required\n                  />\n                </div>\n                \n                <div>\n                  <label className=\"text-sm font-medium mb-2 block\">Maximum Usage</label>\n                  <Input\n                    type=\"number\"\n                    value={formData.maxUsage}\n                    onChange={(e) => setFormData(prev => ({ ...prev, maxUsage: parseInt(e.target.value) || 0 }))}\n                    min={1}\n                    placeholder=\"Leave empty for unlimited\"\n                  />\n                </div>\n                \n                <div className=\"flex items-center space-x-2\">\n                  <Switch\n                    checked={formData.isActive}\n                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}\n                  />\n                  <label className=\"text-sm font-medium\">Active</label>\n                </div>\n                \n                <div className=\"flex gap-2 pt-4\">\n                  <Button type=\"button\" variant=\"outline\" onClick={() => setDialogOpen(false)} className=\"flex-1\">\n                    Cancel\n                  </Button>\n                  <Button type=\"submit\" className=\"flex-1\" disabled={createMutation.isPending || updateMutation.isPending}>\n                    {createMutation.isPending || updateMutation.isPending ? 'Saving...' : (editingCoupon ? 'Update' : 'Create')}\n                  </Button>\n                </div>\n              </form>\n            </DialogContent>\n          </Dialog>\n        </div>\n\n        <div className=\"grid gap-4\">\n          {coupons?.map((coupon: any) => (\n            <Card key={coupon.id}>\n              <CardContent className=\"p-6\">\n                <div className=\"flex items-start justify-between\">\n                  <div className=\"flex-1\">\n                    <div className=\"flex items-center gap-3 mb-2\">\n                      <code className=\"bg-muted px-2 py-1 rounded text-sm font-mono font-semibold\">\n                        {coupon.code}\n                      </code>\n                      <Badge variant={coupon.isActive ? 'default' : 'secondary'}>\n                        {coupon.isActive ? 'Active' : 'Inactive'}\n                      </Badge>\n                      <Button\n                        variant=\"ghost\"\n                        size=\"sm\"\n                        onClick={() => copyToClipboard(coupon.code)}\n                        className=\"h-6 w-6 p-0\"\n                      >\n                        <Copy className=\"h-3 w-3\" />\n                      </Button>\n                    </div>\n                    \n                    <div className=\"grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-2\">\n                      <div>Discount: {coupon.discountPercent}%</div>\n                      <div>Max Usage: {coupon.maxUsage || 'Unlimited'}</div>\n                      <div>Used: {coupon.usageCount || 0} times</div>\n                      <div>Created: {new Date(coupon.createdAt).toLocaleDateString()}</div>\n                    </div>\n                  </div>\n                  \n                  <div className=\"flex gap-2\">\n                    <Button\n                      variant=\"outline\"\n                      size=\"sm\"\n                      onClick={() => handleToggleStatus(coupon)}\n                      disabled={updateMutation.isPending}\n                    >\n                      {coupon.isActive ? <EyeOff className=\"h-4 w-4\" /> : <Eye className=\"h-4 w-4\" />}\n                    </Button>\n                    <Button\n                      variant=\"outline\"\n                      size=\"sm\"\n                      onClick={() => handleEdit(coupon)}\n                    >\n                      <Edit className=\"h-4 w-4\" />\n                    </Button>\n                    <Button\n                      variant=\"outline\"\n                      size=\"sm\"\n                      onClick={() => handleDelete(coupon.id)}\n                      disabled={deleteMutation.isPending}\n                    >\n                      <Trash2 className=\"h-4 w-4\" />\n                    </Button>\n                  </div>\n                </div>\n              </CardContent>\n            </Card>\n          ))}\n          \n          {!coupons?.length && (\n            <Card>\n              <CardContent className=\"p-12 text-center\">\n                <p className=\"text-muted-foreground\">No coupons found. Create your first coupon to get started.</p>\n              </CardContent>\n            </Card>\n          )}\n        </div>\n      </div>\n    </AdminLayout>\n  );\n}
+import { useState } from "react";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useListReferralCodes, useCreateReferralCode } from "@workspace/api-client-react";
+import { useApiOptions } from "@/store/session";
+import { Plus, Copy } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
+export default function AdminCoupons() {
+  const { toast } = useToast();
+  const apiOpts = useApiOptions();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({ code: '', discountPercent: 10, maxUsage: 100, isActive: true });
+
+  const { data: coupons, refetch } = useListReferralCodes(apiOpts);
+  const createMutation = useCreateReferralCode(apiOpts);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createMutation.mutateAsync({ data: formData });
+      toast({ title: "Success", description: "Coupon created successfully" });
+      setDialogOpen(false);
+      setFormData({ code: '', discountPercent: 10, maxUsage: 100, isActive: true });
+      refetch();
+    } catch {
+      toast({ title: "Error", description: "Failed to save coupon", variant: "destructive" });
+    }
+  };
+
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Copied", description: `Coupon code "${code}" copied to clipboard` });
+  };
+
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    setFormData(prev => ({ ...prev, code: result }));
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Coupon Management</h1>
+            <p className="text-muted-foreground">Manage discount coupons and referral codes</p>
+          </div>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setFormData({ code: '', discountPercent: 10, maxUsage: 100, isActive: true })}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Coupon
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add New Coupon</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Coupon Code</label>
+                  <div className="flex gap-2">
+                    <Input value={formData.code} onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))} placeholder="Enter coupon code" required className="flex-1" />
+                    <Button type="button" variant="outline" onClick={generateRandomCode}>Generate</Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Discount Percentage</label>
+                  <Input type="number" value={formData.discountPercent} onChange={(e) => setFormData(prev => ({ ...prev, discountPercent: parseInt(e.target.value) || 0 }))} min={1} max={100} required />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Maximum Usage</label>
+                  <Input type="number" value={formData.maxUsage} onChange={(e) => setFormData(prev => ({ ...prev, maxUsage: parseInt(e.target.value) || 0 }))} min={1} />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch checked={formData.isActive} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))} />
+                  <label className="text-sm font-medium">Active</label>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="flex-1">Cancel</Button>
+                  <Button type="submit" className="flex-1" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? 'Saving...' : 'Create'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid gap-4">
+          {coupons?.map((coupon: any) => (
+            <Card key={coupon.id}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <code className="bg-muted px-2 py-1 rounded text-sm font-mono font-semibold">{coupon.code}</code>
+                      <Badge variant={coupon.isActive ? 'default' : 'secondary'}>{coupon.isActive ? 'Active' : 'Inactive'}</Badge>
+                      <Button variant="ghost" size="sm" onClick={() => copyToClipboard(coupon.code)} className="h-6 w-6 p-0"><Copy className="h-3 w-3" /></Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                      <div>Discount: {coupon.discountPercent}%</div>
+                      <div>Max Usage: {coupon.maxUsage || 'Unlimited'}</div>
+                      <div>Used: {coupon.usageCount || 0} times</div>
+                      <div>Created: {new Date(coupon.createdAt).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {!coupons?.length && (
+            <Card><CardContent className="p-12 text-center"><p className="text-muted-foreground">No coupons found. Create your first coupon to get started.</p></CardContent></Card>
+          )}
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}

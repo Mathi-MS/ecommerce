@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingBag, User, Menu, X, Leaf } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
-import { useGetCart, useGetMe, useListOffers } from "@workspace/api-client-react";
+import { useGetCart, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
@@ -16,7 +16,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   // Rehydrate user
   const { data: userData, isError } = useGetMe({
-    query: { enabled: !!token && !user, retry: false }, // Only fetch if we have token but no user
+    query: { queryKey: getGetMeQueryKey(), enabled: !!token && !user, retry: false },
     ...apiOpts,
   });
 
@@ -28,10 +28,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Fetch cart
   const { data: cart } = useGetCart({ sessionId: cartSessionId });
 
-  // Fetch active offer for banner
-  const { data: offers } = useListOffers(apiOpts);
-  const activeOffer = Array.isArray(offers) ? offers.find((o: any) => o.status === "active") : null;
-
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -39,13 +35,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Top Banner */}
-      {activeOffer && (
-        <div className="bg-primary text-primary-foreground text-center py-3 text-sm font-medium tracking-wide">
-          {activeOffer.text}
-        </div>
-      )}
-
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">

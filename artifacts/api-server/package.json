@@ -20,10 +20,12 @@
     "mongoose": "^8.5.0",
     "pino": "^9",
     "pino-http": "^10",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "nodemailer": "^6.9.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
+    "@types/nodemailer": "^6.4.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

@@ -1,1 +1,180 @@
-import { useState } from \"react\";\nimport { useLocation } from \"wouter\";\nimport { Button } from \"@/components/ui/button\";\nimport { Input } from \"@/components/ui/input\";\nimport { Dialog, DialogContent, DialogHeader, DialogTitle } from \"@/components/ui/dialog\";\nimport { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from \"@/components/ui/dropdown-menu\";\nimport { useToast } from \"@/hooks/use-toast\";\nimport { useSessionStore } from \"@/store/session\";\nimport { User, Edit, Package, Lock, LogOut, Eye, EyeOff } from \"lucide-react\";\n\nexport function ProfileDropdown() {\n  const [, setLocation] = useLocation();\n  const { toast } = useToast();\n  const { user, setUser, logout } = useSessionStore();\n  const [dialog, setDialog] = useState<\"none\" | \"profile\" | \"password\">(\"none\");\n  const [loading, setLoading] = useState(false);\n  const [showPassword, setShowPassword] = useState(false);\n\n  const [profileForm, setProfileForm] = useState({\n    name: user?.name || \"\",\n    phone: user?.phone || \"\"\n  });\n\n  const [passwordForm, setPasswordForm] = useState({\n    currentPassword: \"\",\n    newPassword: \"\",\n    confirmPassword: \"\"\n  });\n\n  const token = localStorage.getItem(\"token\");\n  const authHeaders = { \"Content-Type\": \"application/json\", ...(token ? { Authorization: `Bearer ${token}` } : {}) };\n\n  const handleUpdateProfile = async (e: React.FormEvent) => {\n    e.preventDefault();\n    setLoading(true);\n\n    try {\n      const res = await fetch(\"/api/auth/profile\", {\n        method: \"PUT\",\n        headers: authHeaders,\n        body: JSON.stringify(profileForm)\n      });\n\n      const data = await res.json();\n\n      if (res.ok) {\n        setUser(data.user);\n        localStorage.setItem(\"user\", JSON.stringify(data.user));\n        toast({ title: \"Success\", description: \"Profile updated successfully\" });\n        setDialog(\"none\");\n      } else {\n        toast({ title: \"Error\", description: data.error, variant: \"destructive\" });\n      }\n    } catch {\n      toast({ title: \"Error\", description: \"Failed to update profile\", variant: \"destructive\" });\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const handleChangePassword = async (e: React.FormEvent) => {\n    e.preventDefault();\n\n    if (passwordForm.newPassword !== passwordForm.confirmPassword) {\n      toast({ title: \"Error\", description: \"Passwords don't match\", variant: \"destructive\" });\n      return;\n    }\n\n    if (passwordForm.newPassword.length < 6) {\n      toast({ title: \"Error\", description: \"Password must be at least 6 characters\", variant: \"destructive\" });\n      return;\n    }\n\n    setLoading(true);\n\n    try {\n      const res = await fetch(\"/api/auth/change-password\", {\n        method: \"POST\",\n        headers: authHeaders,\n        body: JSON.stringify({\n          currentPassword: passwordForm.currentPassword,\n          newPassword: passwordForm.newPassword\n        })\n      });\n\n      const data = await res.json();\n\n      if (res.ok) {\n        toast({ title: \"Success\", description: \"Password changed successfully\" });\n        setDialog(\"none\");\n        setPasswordForm({ currentPassword: \"\", newPassword: \"\", confirmPassword: \"\" });\n      } else {\n        toast({ title: \"Error\", description: data.error, variant: \"destructive\" });\n      }\n    } catch {\n      toast({ title: \"Error\", description: \"Failed to change password\", variant: \"destructive\" });\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const handleLogout = () => {\n    logout();\n    // Force a page reload to clear all cached state\n    window.location.href = \"/\";\n  };\n\n  if (!user) {\n    return (\n      <Button variant=\"ghost\" onClick={() => setLocation(\"/auth\")} className=\"flex items-center gap-2\">\n        <User className=\"h-4 w-4\" />\n        Sign In\n      </Button>\n    );\n  }\n\n  return (\n    <>\n      <DropdownMenu>\n        <DropdownMenuTrigger asChild>\n          <Button variant=\"ghost\" className=\"flex items-center gap-2\">\n            <User className=\"h-4 w-4\" />\n            <span className=\"hidden sm:inline\">{user.name.split(' ')[0]}</span>\n          </Button>\n        </DropdownMenuTrigger>\n        <DropdownMenuContent align=\"end\" className=\"w-56\">\n          <div className=\"px-2 py-1.5 text-sm font-medium\">{user.name}</div>\n          <div className=\"px-2 py-1.5 text-xs text-muted-foreground\">{user.email}</div>\n          <DropdownMenuSeparator />\n          <DropdownMenuItem onClick={() => { setProfileForm({ name: user.name, phone: user.phone || \"\" }); setDialog(\"profile\"); }}>\n            <Edit className=\"mr-2 h-4 w-4\" />\n            Edit Profile\n          </DropdownMenuItem>\n          <DropdownMenuItem onClick={() => setLocation(\"/orders\")}>\n            <Package className=\"mr-2 h-4 w-4\" />\n            Order History\n          </DropdownMenuItem>\n          <DropdownMenuItem onClick={() => { setPasswordForm({ currentPassword: \"\", newPassword: \"\", confirmPassword: \"\" }); setDialog(\"password\"); }}>\n            <Lock className=\"mr-2 h-4 w-4\" />\n            Change Password\n          </DropdownMenuItem>\n          <DropdownMenuSeparator />\n          <DropdownMenuItem onClick={handleLogout} className=\"text-destructive\">\n            <LogOut className=\"mr-2 h-4 w-4\" />\n            Logout\n          </DropdownMenuItem>\n        </DropdownMenuContent>\n      </DropdownMenu>\n\n      {/* Edit Profile Dialog */}\n      <Dialog open={dialog === \"profile\"} onOpenChange={o => !o && setDialog(\"none\")}>\n        <DialogContent className=\"sm:max-w-md rounded-2xl\">\n          <DialogHeader>\n            <DialogTitle>Edit Profile</DialogTitle>\n          </DialogHeader>\n          <form onSubmit={handleUpdateProfile} className=\"space-y-4 pt-2\">\n            <div>\n              <label className=\"text-sm font-medium mb-1 block\">Name</label>\n              <Input\n                value={profileForm.name}\n                onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))}\n                placeholder=\"Full Name\"\n                required\n              />\n            </div>\n            <div>\n              <label className=\"text-sm font-medium mb-1 block\">Email</label>\n              <Input value={user.email} disabled className=\"bg-muted\" />\n              <p className=\"text-xs text-muted-foreground mt-1\">Email cannot be changed</p>\n            </div>\n            <div>\n              <label className=\"text-sm font-medium mb-1 block\">Phone</label>\n              <Input\n                value={profileForm.phone}\n                onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))}\n                placeholder=\"Phone Number\"\n                type=\"tel\"\n              />\n            </div>\n            <div className=\"flex gap-2 pt-2\">\n              <Button type=\"button\" variant=\"outline\" onClick={() => setDialog(\"none\")} className=\"flex-1\">\n                Cancel\n              </Button>\n              <Button type=\"submit\" disabled={loading} className=\"flex-1\">\n                {loading ? \"Saving...\" : \"Save Changes\"}\n              </Button>\n            </div>\n          </form>\n        </DialogContent>\n      </Dialog>\n\n      {/* Change Password Dialog */}\n      <Dialog open={dialog === \"password\"} onOpenChange={o => !o && setDialog(\"none\")}>\n        <DialogContent className=\"sm:max-w-md rounded-2xl\">\n          <DialogHeader>\n            <DialogTitle>Change Password</DialogTitle>\n          </DialogHeader>\n          <form onSubmit={handleChangePassword} className=\"space-y-4 pt-2\">\n            <div>\n              <label className=\"text-sm font-medium mb-1 block\">Current Password</label>\n              <div className=\"relative\">\n                <Input\n                  type={showPassword ? \"text\" : \"password\"}\n                  value={passwordForm.currentPassword}\n                  onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))}\n                  placeholder=\"Enter current password\"\n                  className=\"pr-10\"\n                  required\n                />\n                <button\n                  type=\"button\"\n                  onClick={() => setShowPassword(!showPassword)}\n                  className=\"absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground\"\n                >\n                  {showPassword ? <EyeOff className=\"h-4 w-4\" /> : <Eye className=\"h-4 w-4\" />}\n                </button>\n              </div>\n            </div>\n            <div>\n              <label className=\"text-sm font-medium mb-1 block\">New Password</label>\n              <Input\n                type=\"password\"\n                value={passwordForm.newPassword}\n                onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}\n                placeholder=\"Enter new password\"\n                required\n              />\n            </div>\n            <div>\n              <label className=\"text-sm font-medium mb-1 block\">Confirm New Password</label>\n              <Input\n                type=\"password\"\n                value={passwordForm.confirmPassword}\n                onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}\n                placeholder=\"Confirm new password\"\n                required\n              />\n            </div>\n            <div className=\"flex gap-2 pt-2\">\n              <Button type=\"button\" variant=\"outline\" onClick={() => setDialog(\"none\")} className=\"flex-1\">\n                Cancel\n              </Button>\n              <Button type=\"submit\" disabled={loading} className=\"flex-1\">\n                {loading ? \"Changing...\" : \"Change Password\"}\n              </Button>\n            </div>\n          </form>\n        </DialogContent>\n      </Dialog>\n    </>\n  );\n}
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { useSessionStore } from "@/store/session";
+import { User, Edit, Package, Lock, LogOut, Eye, EyeOff } from "lucide-react";
+
+export function ProfileDropdown() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { user, setUser, logout } = useSessionStore();
+  const [dialog, setDialog] = useState<"none" | "profile" | "password">("none");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [profileForm, setProfileForm] = useState({ name: user?.name || "", phone: user?.phone || "" });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  const token = localStorage.getItem("token");
+  const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/profile", { method: "PUT", headers: authHeaders, body: JSON.stringify(profileForm) });
+      const data = await res.json();
+      if (res.ok) {
+        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        toast({ title: "Success", description: "Profile updated successfully" });
+        setDialog("none");
+      } else {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({ title: "Error", description: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: "Success", description: "Password changed successfully" });
+        setDialog("none");
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to change password", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/";
+  };
+
+  if (!user) {
+    return (
+      <Button variant="ghost" onClick={() => setLocation("/auth")} className="flex items-center gap-2">
+        <User className="h-4 w-4" />
+        Sign In
+      </Button>
+    );
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">{user.name.split(' ')[0]}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <div className="px-2 py-1.5 text-sm font-medium">{user.name}</div>
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">{user.email}</div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => { setProfileForm({ name: user.name, phone: user.phone || "" }); setDialog("profile"); }}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setLocation("/orders")}>
+            <Package className="mr-2 h-4 w-4" />
+            Order History
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); setDialog("password"); }}>
+            <Lock className="mr-2 h-4 w-4" />
+            Change Password
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={dialog === "profile"} onOpenChange={o => !o && setDialog("none")}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle>Edit Profile</DialogTitle></DialogHeader>
+          <form onSubmit={handleUpdateProfile} className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Name</label>
+              <Input value={profileForm.name} onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))} placeholder="Full Name" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Email</label>
+              <Input value={user.email} disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Phone</label>
+              <Input value={profileForm.phone} onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} placeholder="Phone Number" type="tel" />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setDialog("none")} className="flex-1">Cancel</Button>
+              <Button type="submit" disabled={loading} className="flex-1">{loading ? "Saving..." : "Save Changes"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialog === "password"} onOpenChange={o => !o && setDialog("none")}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle>Change Password</DialogTitle></DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Current Password</label>
+              <div className="relative">
+                <Input type={showPassword ? "text" : "password"} value={passwordForm.currentPassword} onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))} placeholder="Enter current password" className="pr-10" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">New Password</label>
+              <Input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="Enter new password" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Confirm New Password</label>
+              <Input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))} placeholder="Confirm new password" required />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setDialog("none")} className="flex-1">Cancel</Button>
+              <Button type="submit" disabled={loading} className="flex-1">{loading ? "Changing..." : "Change Password"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
