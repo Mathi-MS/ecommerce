@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingBag, User, Menu, X, Leaf } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
-import { useGetMe, useListOffers } from "@/lib/api";
+import { useGetMe, useListOffers, useListProducts } from "@/lib/api";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
@@ -46,6 +46,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Fetch active offer for banner
   const { data: offers } = useListOffers(apiOpts);
   const activeOffer = Array.isArray(offers) ? offers.find((o: any) => o.status === "active") : null;
+
+  // Fetch all products for footer
+  const { data: productsData } = useListProducts({ limit: 100 });
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -133,32 +136,60 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Footer */}
       <footer className="bg-foreground text-background py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <Leaf className="h-6 w-6 text-primary" />
-              <span className="font-display font-bold text-2xl tracking-tight text-white">Elowell</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap gap-12 justify-between">
+            <div className="flex-shrink-0 w-full md:w-auto md:max-w-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Leaf className="h-6 w-6 text-primary" />
+                <span className="font-display font-bold text-2xl tracking-tight text-white">Elowell</span>
+              </div>
+              <p className="text-muted-foreground">
+                We believe in the power of pure, unadulterated nature. Our products are sustainably sourced, minimally processed, and delivered with love.
+              </p>
             </div>
-            <p className="text-muted-foreground max-w-sm">
-              We believe in the power of pure, unadulterated nature. Our products are sustainably sourced, minimally processed, and delivered with love.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4 text-white">Shop</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/products" className="hover:text-white transition-colors">All Products</Link></li>
-              <li><Link href="/products?category=oils" className="hover:text-white transition-colors">Natural Oils</Link></li>
-              <li><Link href="/products?category=honey" className="hover:text-white transition-colors">Raw Honey</Link></li>
-              <li><Link href="/products?category=skincare" className="hover:text-white transition-colors">Skincare</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4 text-white">Help</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-              <li><Link href="/shipping" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
-            </ul>
+            
+            {/* Shop Columns */}
+            {(() => {
+              const products = productsData?.products || [];
+              const productsPerColumn = 5;
+              const columns = [];
+              
+              for (let i = 0; i < products.length; i += productsPerColumn) {
+                const columnProducts = products.slice(i, i + productsPerColumn);
+                const columnIndex = Math.floor(i / productsPerColumn);
+                
+                columns.push(
+                  <div key={`shop-col-${columnIndex}`} className="flex-shrink-0">
+                    <h4 className="font-bold mb-4 text-white">
+                      {columnIndex === 0 ? 'Shop' : ``}
+                    </h4>
+                    <ul className="space-y-2 text-muted-foreground">
+                      {columnIndex === 0 && (
+                        <li><Link href="/products" className="hover:text-white transition-colors">All Products</Link></li>
+                      )}
+                      {columnProducts.map((product: any) => (
+                        <li key={product.id}>
+                          <Link href={`/products/${product.slug}`} className="hover:text-white transition-colors">
+                            {product.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              }
+              
+              return columns;
+            })()}
+            
+            <div className="flex-shrink-0">
+              <h4 className="font-bold mb-4 text-white">Help</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link href="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link href="/shipping" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
+              </ul>
+            </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-white/10 text-sm text-muted-foreground text-center">

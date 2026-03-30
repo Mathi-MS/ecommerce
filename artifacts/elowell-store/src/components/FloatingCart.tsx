@@ -32,7 +32,7 @@ export function FloatingCart() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(false)}
-                className="h-6 w-6 p-0"
+                className="h-6 w-6 p-0 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -55,10 +55,10 @@ export function FloatingCart() {
             </div>
             
             <div className="mt-3 pt-2 border-t border-border">
-              <Link href="/checkout">
-                <Button className="w-full rounded-xl" size="sm">
-                  Checkout
-                </Button>
+              <Link href="/cart">
+                <Button className="w-full rounded-xl cursor-pointer" size="sm">
+                  Cart
+                </Button> 
               </Link>
             </div>
           </motion.div>

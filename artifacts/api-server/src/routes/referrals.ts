@@ -21,13 +21,44 @@ function mapReferral(r: any) {
 router.post("/validate", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { code } = req.body;
+    const { code, cartItems } = req.body;
     const ref = await ReferralCode.findOne({ code, isActive: true });
     if (!ref) { res.status(404).json({ error: "Invalid or inactive referral code" }); return; }
     if (ref.maxUsage && ref.usageCount >= ref.maxUsage) {
       res.status(404).json({ error: "Referral code usage limit reached" }); return;
     }
-    res.json(mapReferral(ref));
+    
+    // Check if referral code applies to products in cart and calculate applicable amount
+    let applicableAmount = 0;
+    let applicableItems = [];
+    
+    if (ref.productIds && ref.productIds.length > 0 && cartItems) {
+      const applicableProductIds = ref.productIds.map((id: any) => String(id));
+      
+      // Find items in cart that match the referral code products
+      applicableItems = cartItems.filter((item: any) => 
+        applicableProductIds.includes(String(item.productId))
+      );
+      
+      if (applicableItems.length === 0) {
+        res.status(400).json({ error: "This referral code is not applicable to items in your cart" });
+        return;
+      }
+      
+      // Calculate total amount for applicable items only
+      applicableAmount = applicableItems.reduce((total: number, item: any) => {
+        const price = item.discountPrice || item.price || 0;
+        return total + (price * item.quantity);
+      }, 0);
+    }
+    
+    const response = {
+      ...mapReferral(ref),
+      applicableAmount,
+      applicableItems: applicableItems.map((item: any) => item.productId)
+    };
+    
+    res.json(response);
   } catch (err) {
     req.log.error({ err }, "Validate referral error");
     res.status(500).json({ error: "Failed to validate referral code" });

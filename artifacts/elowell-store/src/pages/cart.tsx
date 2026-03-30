@@ -33,6 +33,16 @@ export default function CartPage() {
     }
   }, [cart, localCart]);
 
+  // Load applied referral code from session storage
+  useEffect(() => {
+    const savedReferralCode = sessionStorage.getItem('appliedReferralCode');
+    const savedDiscountPercent = sessionStorage.getItem('appliedDiscountPercent');
+    if (savedReferralCode && savedDiscountPercent) {
+      setPromoCode(savedReferralCode);
+      setDiscountPercent(Number(savedDiscountPercent));
+    }
+  }, []);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
@@ -181,22 +191,56 @@ export default function CartPage() {
 
 
   const applyPromo = () => {
-    if (!promoCode) return;
-    validateReferral.mutate({ data: { code: promoCode } }, {
+    if (!promoCode || !displayCart?.items) return;
+    
+    validateReferral.mutate({ 
+      data: { 
+        code: promoCode,
+        cartItems: displayCart.items.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          discountPrice: item.discountPrice
+        }))
+      } 
+    }, {
       onSuccess: (res: any) => {
         setDiscountPercent(res.discountPercent);
-        toast({ title: "Code Applied", description: `You got ${res.discountPercent}% off!` });
+        // Store in session storage for checkout
+        sessionStorage.setItem('appliedReferralCode', promoCode);
+        sessionStorage.setItem('appliedDiscountPercent', String(res.discountPercent));
+        sessionStorage.setItem('applicableAmount', String(res.applicableAmount || 0));
+        sessionStorage.setItem('applicableItems', JSON.stringify(res.applicableItems || []));
+        
+        const discountAmount = (res.applicableAmount || 0) * (res.discountPercent / 100);
+        toast({ 
+          title: "Code Applied", 
+          description: `You got ${res.discountPercent}% off on eligible items! Saved $${discountAmount.toFixed(2)}` 
+        });
       },
-      onError: () => {
+      onError: (error: any) => {
         setDiscountPercent(0);
-        toast({ title: "Invalid Code", description: "This code is not valid.", variant: "destructive" });
+        // Clear session storage
+        sessionStorage.removeItem('appliedReferralCode');
+        sessionStorage.removeItem('appliedDiscountPercent');
+        sessionStorage.removeItem('applicableAmount');
+        sessionStorage.removeItem('applicableItems');
+        toast({ 
+          title: "Invalid Code", 
+          description: error.message || "This code is not valid.", 
+          variant: "destructive" 
+        });
       }
     });
   };
 
   const isCartEmpty = !displayCart || displayCart.items.length === 0;
   const subtotal = displayCart?.total || 0;
-  const discountAmount = subtotal * (discountPercent / 100);
+  
+  // Calculate discount only for applicable items
+  const applicableAmount = sessionStorage.getItem('applicableAmount') ? 
+    Number(sessionStorage.getItem('applicableAmount')) : subtotal;
+  const discountAmount = applicableAmount * (discountPercent / 100);
   const finalTotal = subtotal - discountAmount;
 
   return (
@@ -263,10 +307,30 @@ export default function CartPage() {
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
                   {discountPercent > 0 && (
-                    <div className="flex justify-between text-secondary font-medium">
-                      <span>Discount ({discountPercent}%)</span>
-                      <span>-${discountAmount.toFixed(2)}</span>
-                    </div>
+                    <>
+                      <div className="bg-secondary/10 p-3 rounded-lg border border-secondary/20">
+                        <div className="flex justify-between text-secondary font-medium mb-2">
+                          <span>Discount ({discountPercent}%) - {promoCode}</span>
+                          <span>-${discountAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <div className="font-medium mb-1">Applied to:</div>
+                          {(() => {
+                            const applicableItems = JSON.parse(sessionStorage.getItem('applicableItems') || '[]');
+                            const applicableProducts = displayCart?.items?.filter((item: any) => 
+                              applicableItems.includes(item.productId)
+                            ) || [];
+                            
+                            return applicableProducts.map((item: any, index: number) => (
+                              <div key={item.id} className="flex justify-between">
+                                <span>• {item.productName}</span>
+                                <span>${((item.discountPrice || item.price) * item.quantity).toFixed(2)}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    </>
                   )}
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>

@@ -527,11 +527,50 @@ export const useRemoveCartItem = () => {
   return { mutate, isPending, isLoading: isPending };
 };
 
-export const useValidateReferralCode = () => ({ 
-  mutate: (data: any, options?: any) => Promise.resolve({ isValid: false, discount: 0 }),
-  isPending: false,
-  isLoading: false
-});
+export const useValidateReferralCode = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { data: { code: string; cartItems?: any[] } }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/referrals/validate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          code: options.data.code,
+          cartItems: options.data.cartItems 
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        let errorMessage = errorData;
+        try {
+          const errorJson = JSON.parse(errorData);
+          errorMessage = errorJson.error || errorData;
+        } catch {
+          // If not JSON, use the text as is
+        }
+        throw new Error(errorMessage || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
 
 export const useCreateOrder = () => {
   const [isPending, setIsPending] = useState(false);

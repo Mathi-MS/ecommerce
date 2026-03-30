@@ -56,6 +56,10 @@ export default function CheckoutPage() {
     if (!cart || cart.items.length === 0) return;
     
     try {
+      // Get referral code from cart page (if applied)
+      const referralCode = sessionStorage.getItem('appliedReferralCode');
+      const discountPercent = sessionStorage.getItem('appliedDiscountPercent');
+      
       // First create the order
       const orderResponse = await new Promise((resolve, reject) => {
         createOrder.mutate({
@@ -63,6 +67,8 @@ export default function CheckoutPage() {
             ...data,
             sessionId: cartSessionId,
             userId: user?.id,
+            referralCode: referralCode || undefined,
+            discountPercent: discountPercent ? Number(discountPercent) : undefined,
           }
         }, {
           onSuccess: resolve,
@@ -147,7 +153,15 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const total = cart.total + (cart.total >= 50 ? 0 : 5); // Simple shipping logic
+  // Calculate total with discount
+  const subtotal = cart.total;
+  const applicableAmount = sessionStorage.getItem('applicableAmount') ? 
+    Number(sessionStorage.getItem('applicableAmount')) : 0;
+  const discountPercent = sessionStorage.getItem('appliedDiscountPercent') ? 
+    Number(sessionStorage.getItem('appliedDiscountPercent')) : 0;
+  const discountAmount = applicableAmount * (discountPercent / 100);
+  const discountedSubtotal = subtotal - discountAmount;
+  const total = discountedSubtotal + (discountedSubtotal >= 50 ? 0 : 5);
 
   return (
     <AppLayout>
@@ -239,9 +253,41 @@ export default function CheckoutPage() {
                   <span>Subtotal</span>
                   <span>${cart.total.toFixed(2)}</span>
                 </div>
+                {(() => {
+                  const referralCode = sessionStorage.getItem('appliedReferralCode');
+                  const discountPercent = sessionStorage.getItem('appliedDiscountPercent');
+                  const applicableAmount = sessionStorage.getItem('applicableAmount');
+                  const applicableItems = JSON.parse(sessionStorage.getItem('applicableItems') || '[]');
+                  
+                  if (referralCode && discountPercent && applicableAmount) {
+                    const discountAmount = Number(applicableAmount) * (Number(discountPercent) / 100);
+                    const applicableProducts = cart.items.filter(item => 
+                      applicableItems.includes(item.productId)
+                    );
+                    
+                    return (
+                      <div className="bg-secondary/10 p-3 rounded-lg border border-secondary/20">
+                        <div className="flex justify-between text-secondary font-medium mb-2">
+                          <span>Discount ({discountPercent}%) - {referralCode}</span>
+                          <span>-${discountAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <div className="font-medium mb-1">Applied to:</div>
+                          {applicableProducts.map((item: any) => (
+                            <div key={item.id} className="flex justify-between">
+                              <span>• {item.productName}</span>
+                              <span>${((item.discountPrice || item.price) * item.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Shipping</span>
-                  <span>{cart.total >= 50 ? 'Free' : '$5.00'}</span>
+                  <span>{discountedSubtotal >= 50 ? 'Free' : '$5.00'}</span>
                 </div>
               </div>
 
