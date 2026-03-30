@@ -4,6 +4,7 @@ import { useSessionStore } from "@/store/session";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -346,21 +347,25 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <div className="mb-6 flex gap-2">
-                  <Input 
-                    placeholder="Referral Code" 
-                    value={promoCode} 
-                    onChange={e => setPromoCode(e.target.value)} 
-                    className="rounded-xl h-12"
-                  />
-                  <Button 
-                    variant="secondary" 
-                    className="rounded-xl h-12" 
-                    onClick={applyPromo}
-                    disabled={validateReferral.isPending || !promoCode}
-                  >
-                    Apply
-                  </Button>
+                <div className="mb-6 space-y-2">
+                  <Label htmlFor="referralCode">Referral Code</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      id="referralCode"
+                      placeholder="Enter referral code" 
+                      value={promoCode} 
+                      onChange={e => setPromoCode(e.target.value)} 
+                      className="rounded-xl h-12"
+                    />
+                    <Button 
+                      variant="secondary" 
+                      className="rounded-xl h-12" 
+                      onClick={applyPromo}
+                      disabled={validateReferral.isPending || !promoCode}
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </div>
 
                 <Link to="/checkout">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -88,15 +89,25 @@ export default function AdminFaq() {
             <DialogTitle>{editing ? "Edit FAQ" : "Add FAQ"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <Input placeholder="Question" value={question} onChange={e => { setQuestion(e.target.value); setError(""); }} />
-            <textarea
-              placeholder="Answer"
-              value={answer}
-              onChange={e => { setAnswer(e.target.value); setError(""); }}
-              rows={4}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <Input placeholder="Order (number)" type="number" value={order} onChange={e => setOrder(e.target.value)} />
+            <div className="space-y-2">
+              <Label htmlFor="question">Question *</Label>
+              <Input id="question" placeholder="Enter FAQ question" value={question} onChange={e => { setQuestion(e.target.value); setError(""); }} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="answer">Answer *</Label>
+              <textarea
+                id="answer"
+                placeholder="Enter detailed answer"
+                value={answer}
+                onChange={e => { setAnswer(e.target.value); setError(""); }}
+                rows={4}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="order">Display Order</Label>
+              <Input id="order" placeholder="Enter display order (number)" type="number" value={order} onChange={e => setOrder(e.target.value)} />
+            </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
             <Button type="submit" className="w-full rounded-xl" disabled={saving}>
               {saving ? "Saving..." : editing ? "Update FAQ" : "Save FAQ"}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -110,24 +111,35 @@ export default function AdminOffers() {
             <DialogTitle>{editing ? "Edit Offer" : "Add Offer"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <div>
+            <div className="space-y-2">
+              <Label htmlFor="offerText">Offer Text</Label>
               <Input
-                placeholder="Offer text (2–10 words, max 200 chars)"
+                id="offerText"
+                placeholder="Enter offer text (2–10 words, max 200 chars)"
                 value={text}
                 onChange={e => { setText(e.target.value); setError(""); }}
                 maxLength={200}
               />
-              <p className="text-xs text-muted-foreground mt-1">{wordCount} word{wordCount !== 1 ? "s" : ""} · {text.length}/200 chars</p>
-              {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+              <p className="text-xs text-muted-foreground">{wordCount} word{wordCount !== 1 ? "s" : ""} · {text.length}/200 chars</p>
+              {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">Status:</span>
-              {["active", "inactive"].map(s => (
-                <label key={s} className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="status" value={s} checked={status === s} onChange={() => setStatus(s)} />
-                  <span className="text-sm capitalize">{s}</span>
-                </label>
-              ))}
+            <div className="space-y-2">
+              <Label>Offer Status</Label>
+              <div className="flex items-center gap-3">
+                {["active", "inactive"].map(s => (
+                  <label key={s} className="flex items-center gap-1.5 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="status" 
+                      value={s} 
+                      checked={status === s} 
+                      onChange={() => setStatus(s)}
+                      className="rounded border-gray-300" 
+                    />
+                    <span className="text-sm capitalize">{s}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <Button type="submit" className="w-full rounded-xl" disabled={saving}>
               {saving ? "Saving..." : editing ? "Update Offer" : "Save Offer"}

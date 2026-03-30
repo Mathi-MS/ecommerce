@@ -4,6 +4,7 @@ import { useListProducts } from "@/lib/api";
 import { useApiOptions } from "@/store/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, Tag, Edit } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,18 +109,26 @@ export default function AdminCoupons() {
             <DialogTitle>{editing ? "Edit Coupon Code" : "Add Coupon Code"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <Input
-              placeholder="Coupon Name *"
-              value={form.couponName}
-              onChange={e => setForm(f => ({ ...f, couponName: e.target.value }))}
-            />
-            <Input
-              type="number"
-              placeholder="Discount Percentage * (e.g. 10)"
-              min={1} max={100}
-              value={form.discountPercent}
-              onChange={e => setForm(f => ({ ...f, discountPercent: e.target.value }))}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="couponName">Coupon Name *</Label>
+              <Input
+                id="couponName"
+                placeholder="Enter coupon name"
+                value={form.couponName}
+                onChange={e => setForm(f => ({ ...f, couponName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discountPercent">Discount Percentage *</Label>
+              <Input
+                id="discountPercent"
+                type="number"
+                placeholder="Enter discount percentage (e.g. 10)"
+                min={1} max={100}
+                value={form.discountPercent}
+                onChange={e => setForm(f => ({ ...f, discountPercent: e.target.value }))}
+              />
+            </div>
             {previewCode && (
               <div className="flex items-center gap-2 bg-secondary/10 border border-secondary/20 rounded-xl px-4 py-3">
                 <Tag className="h-4 w-4 text-secondary" />
@@ -127,8 +136,9 @@ export default function AdminCoupons() {
               </div>
             )}
 
-            <div>
-              <p className="text-sm font-medium mb-2">Applicable Products (select to restrict)</p>
+            <div className="space-y-2">
+              <Label htmlFor="applicableProducts">Applicable Products</Label>
+              <p className="text-xs text-muted-foreground">Select specific products or leave empty to apply to all products</p>
               <div className="border border-border rounded-xl max-h-48 overflow-y-auto divide-y divide-border">
                 {products.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-3">No products found</p>
@@ -142,6 +152,7 @@ export default function AdminCoupons() {
                         onChange={() => !taken && toggleProduct(String(p.id))}
                         disabled={!!taken}
                         className="rounded"
+                        aria-label={`Apply coupon to ${p.name}`}
                       />
                       <img src={p.mainImage || p.images?.[0] || ""} alt="" className="w-8 h-8 rounded-lg object-cover bg-muted" />
                       <span className="text-sm flex-1">{p.name}</span>
@@ -151,7 +162,7 @@ export default function AdminCoupons() {
                 })}
               </div>
               {form.productIds.length === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">No products selected — coupon applies to all products</p>
+                <p className="text-xs text-muted-foreground">No products selected — coupon applies to all products</p>
               )}
             </div>
 

@@ -4,6 +4,7 @@ import { useApiOptions } from "@/store/session";
 import { useListCategories } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Plus, Edit, Eye, Star, X } from "lucide-react";
@@ -157,39 +158,64 @@ export default function AdminProducts() {
             <DialogTitle>{editing ? "Edit Product" : "Add Product"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <Input placeholder="Product Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            <Input placeholder="Short Description" value={form.shortDescription} onChange={e => setForm(f => ({ ...f, shortDescription: e.target.value }))} />
-            <textarea
-              placeholder="Full Description"
-              value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              rows={4}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <Input type="number" placeholder="Base Price *" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
-              <Input type="number" placeholder="Selling Price" step="0.01" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))} />
+            <div className="space-y-2">
+              <Label htmlFor="productName">Product Name *</Label>
+              <Input id="productName" placeholder="Enter product name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shortDescription">Short Description</Label>
+              <Input id="shortDescription" placeholder="Brief product description" value={form.shortDescription} onChange={e => setForm(f => ({ ...f, shortDescription: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fullDescription">Full Description</Label>
+              <textarea
+                id="fullDescription"
+                placeholder="Detailed product description"
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                rows={4}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Input type="number" placeholder="Stock" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
-              <Input type="number" placeholder="Order" value={form.order} onChange={e => setForm(f => ({ ...f, order: e.target.value }))} />
+              <div className="space-y-2">
+                <Label htmlFor="basePrice">Base Price *</Label>
+                <Input id="basePrice" type="number" placeholder="0.00" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sellingPrice">Selling Price</Label>
+                <Input id="sellingPrice" type="number" placeholder="0.00" step="0.01" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock Quantity</Label>
+                <Input id="stock" type="number" placeholder="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="order">Display Order</Label>
+                <Input id="order" type="number" placeholder="0" value={form.order} onChange={e => setForm(f => ({ ...f, order: e.target.value }))} />
+              </div>
             </div>
 
             {/* Featured Toggle */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="featured"
-                checked={form.featured}
-                onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="featured" className="text-sm font-medium">Featured Product</label>
+            <div className="space-y-2">
+              <Label>Product Settings</Label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="featured"
+                  checked={form.featured}
+                  onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="featured" className="text-sm font-normal cursor-pointer">Mark as Featured Product</Label>
+              </div>
             </div>
 
             {/* Categories */}
-            <div>
-              <p className="text-sm font-medium mb-2">Categories</p>
+            <div className="space-y-2">
+              <Label htmlFor="categories">Product Categories</Label>
               <MultiSelect
                 options={categories?.map(cat => ({ id: cat.id, name: cat.name })) || []}
                 selected={form.categoryIds}
@@ -199,35 +225,35 @@ export default function AdminProducts() {
             </div>
 
             {/* Main Image */}
-            <div>
-              <p className="text-sm font-medium mb-2">Main Image (single)</p>
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="space-y-2">
+              <Label htmlFor="mainImage">Main Product Image</Label>
+              <label htmlFor="mainImage" className="flex items-center gap-3 cursor-pointer">
                 <div className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30">
-                  {form.mainImage ? <img src={`https://be-ecommerce-w2gz.onrender.com${form.mainImage}`} className="w-full h-full object-cover" /> : <Plus className="h-6 w-6 text-muted-foreground" />}
+                  {form.mainImage ? <img src={`https://be-ecommerce-w2gz.onrender.com${form.mainImage}`} className="w-full h-full object-cover" alt="Main product image" /> : <Plus className="h-6 w-6 text-muted-foreground" />}
                 </div>
                 <span className="text-sm text-muted-foreground">Click to upload main image</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
+                <input id="mainImage" type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
               </label>
             </div>
 
             {/* Product Images */}
-            <div>
-              <p className="text-sm font-medium mb-2">Product Images (max 5)</p>
+            <div className="space-y-2">
+              <Label htmlFor="productImages">Additional Product Images (max 5)</Label>
               <div className="flex flex-wrap gap-3">
                 {form.images.map((img, idx) => (
                   <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
-                    <img src={`https://be-ecommerce-w2gz.onrender.com${img}`} className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removeProductImage(idx)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5"><X className="h-3 w-3 text-white" /></button>
+                    <img src={`https://be-ecommerce-w2gz.onrender.com${img}`} className="w-full h-full object-cover" alt={`Product image ${idx + 1}`} />
+                    <button type="button" onClick={() => removeProductImage(idx)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5" aria-label={`Remove image ${idx + 1}`}><X className="h-3 w-3 text-white" /></button>
                   </div>
                 ))}
                 {form.images.length < 5 && (
-                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer bg-muted/30">
+                  <label htmlFor="productImages" className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer bg-muted/30">
                     <Plus className="h-6 w-6 text-muted-foreground" />
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleProductImagesUpload} />
+                    <input id="productImages" type="file" accept="image/*" multiple className="hidden" onChange={handleProductImagesUpload} />
                   </label>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{form.images.length}/5 images</p>
+              <p className="text-xs text-muted-foreground mt-1">{form.images.length}/5 images uploaded</p>
             </div>
 
             {error && <p className="text-xs text-destructive">{error}</p>}
@@ -250,12 +276,12 @@ export default function AdminProducts() {
                 {/* Main image + gallery */}
                 <div className="space-y-3">
                   <div className="aspect-video rounded-2xl overflow-hidden bg-muted/30">
-                    <img src={viewing.mainImage || viewing.images?.[0] || ""} alt={viewing.name} className="w-full h-full object-cover" />
+                    <img src={`https://be-ecommerce-w2gz.onrender.com${viewing.mainImage || viewing.images?.[0] || ""}`} alt={viewing.name} className="w-full h-full object-cover" />
                   </div>
                   {viewing.images?.length > 0 && (
                     <div className="flex gap-2 flex-wrap">
                       {viewing.images.map((img: string, i: number) => (
-                        <img key={i} src={img} className="w-16 h-16 rounded-xl object-cover border border-border" />
+                        <img key={i} src={`https://be-ecommerce-w2gz.onrender.com${img}`} className="w-16 h-16 rounded-xl object-cover border border-border" />
                       ))}
                     </div>
                   )}
@@ -319,7 +345,7 @@ export default function AdminProducts() {
                 <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                   <td className="p-4 text-muted-foreground text-sm">{p.order}</td>
                   <td className="p-4">
-                    <img src={p.mainImage || p.images?.[0] || ""} alt="" className="w-10 h-10 rounded-lg object-cover bg-muted" />
+                    <img src={`https://be-ecommerce-w2gz.onrender.com${p.mainImage || p.images?.[0] || ""}`} alt="" className="w-10 h-10 rounded-lg object-cover bg-muted" />
                   </td>
                   <td className="p-4 font-medium">{p.name}</td>
                   <td className="p-4">

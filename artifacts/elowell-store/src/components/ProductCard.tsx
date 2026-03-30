@@ -74,7 +74,7 @@ export function ProductCard({ product }: { product: Product }) {
       >
         <div className="relative aspect-[4/5] overflow-hidden bg-muted/30">
           <img 
-            src={imageSrc} 
+            src={`https://be-ecommerce-w2gz.onrender.com${imageSrc}`} 
             alt={product.name} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
