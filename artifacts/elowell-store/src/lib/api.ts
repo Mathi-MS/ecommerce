@@ -170,6 +170,16 @@ export interface HomeSection {
   updatedAt?: string;
 }
 
+export interface Review {
+  id: string;
+  productId: string;
+  userId?: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface DashboardStats {
   totalRevenue: number;
   totalOrders: number;
@@ -995,6 +1005,28 @@ export const useDeleteHomeSection = () => {
     setIsPending(true);
     try {
       const result = await apiCall(`/api/home-sections/${options.id}`, {
+        method: 'DELETE',
+      });
+      callbacks?.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      callbacks?.onError?.(error);
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useDeleteAboutSection = () => {
+  const [isPending, setIsPending] = useState(false);
+  
+  const mutate = async (options: { id: string }, callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void }) => {
+    setIsPending(true);
+    try {
+      const result = await apiCall(`/api/about/${options.id}`, {
         method: 'DELETE',
       });
       callbacks?.onSuccess?.(result);

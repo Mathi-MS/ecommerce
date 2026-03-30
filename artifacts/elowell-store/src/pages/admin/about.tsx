@@ -45,6 +45,7 @@ export default function AboutAdmin() {
     
     updateAbout(
       {
+        id: aboutData?.id || 'default',
         data: {
           ...formData,
           features: filteredFeatures,

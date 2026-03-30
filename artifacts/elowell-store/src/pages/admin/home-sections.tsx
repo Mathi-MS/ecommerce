@@ -27,7 +27,7 @@ interface HomeSectionForm {
     buttonLink?: string;
     
     // Featured products fields
-    productLimit?: string;
+    productLimit?: number;
     showFeatured?: boolean;
     category?: string;
     selectedProductIds?: string[];
@@ -59,7 +59,7 @@ export default function HomeSectionsAdmin() {
     isActive: true,
     config: {
       features: [""],
-      productLimit: "4",
+      productLimit: 4,
       showFeatured: true,
       selectedProductIds: [],
       viewAllText: "View All",
@@ -76,7 +76,7 @@ export default function HomeSectionsAdmin() {
       isActive: true,
       config: {
         features: [""],
-        productLimit: "4",
+        productLimit: 4,
         showFeatured: true,
         selectedProductIds: [],
         viewAllText: "View All",
@@ -104,7 +104,7 @@ export default function HomeSectionsAdmin() {
       config: {
         ...section.config,
         features: section.config?.features?.length ? section.config.features : [""],
-        productLimit: String(section.config?.productLimit || 4),
+        productLimit: section.config?.productLimit || 4,
         selectedProductIds: section.config?.selectedProductIds || [],
       }
     });
@@ -127,8 +127,8 @@ export default function HomeSectionsAdmin() {
     
     // Auto-reorder logic: if setting order to an existing position, shift others
     const updatedSections = sections?.map(section => {
-      const sectionId = section._id || section.id;
-      const editingSectionId = editingSection?._id || editingSection?.id;
+      const sectionId = section.id;
+      const editingSectionId = editingSection?.id;
       
       // Skip the section we're currently editing
       if (editingSectionId && sectionId === editingSectionId) {
@@ -155,8 +155,8 @@ export default function HomeSectionsAdmin() {
     // Function to update other sections' orders
     const updateOtherSections = async () => {
       for (const section of updatedSections) {
-        const sectionId = section._id || section.id;
-        const editingSectionId = editingSection?._id || editingSection?.id;
+        const sectionId = section.id;
+        const editingSectionId = editingSection?.id;
         
         // Skip the section we're editing and sections that don't need reordering
         if ((editingSectionId && sectionId === editingSectionId) || section.order < newOrder) {
@@ -186,7 +186,7 @@ export default function HomeSectionsAdmin() {
     };
 
     if (editingSection) {
-      const sectionId = editingSection._id || editingSection.id;
+      const sectionId = editingSection.id;
       console.log('Updating section with ID:', sectionId);
       
       updateSection(
@@ -233,7 +233,7 @@ export default function HomeSectionsAdmin() {
       return;
     }
 
-    const sectionId = section._id || section.id;
+    const sectionId = section.id;
     console.log('Using section ID:', sectionId); // Debug log
     
     deleteSection(
@@ -469,10 +469,10 @@ export default function HomeSectionsAdmin() {
                         <Input
                           id="productLimit"
                           type="number"
-                          value={formData.config.productLimit || "4"}
+                          value={String(formData.config.productLimit || 4)}
                           onChange={(e) => setFormData(prev => ({
                             ...prev,
-                            config: { ...prev.config, productLimit: e.target.value }
+                            config: { ...prev.config, productLimit: Number(e.target.value) || 4 }
                           }))}
                           placeholder="4"
                         />
@@ -654,7 +654,7 @@ export default function HomeSectionsAdmin() {
               const Icon = sectionType?.icon || Package;
               
               return (
-                <Card key={section._id || section.id}>
+                <Card key={section.id}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
