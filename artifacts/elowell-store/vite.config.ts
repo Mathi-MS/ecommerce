@@ -16,6 +16,38 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+          'query-vendor': ['@tanstack/react-query'],
+          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'animation-vendor': ['framer-motion'],
+          
+          // Feature chunks
+          'admin': [
+            './src/pages/admin/dashboard',
+            './src/pages/admin/products', 
+            './src/pages/admin/categories',
+            './src/pages/admin/banners',
+            './src/pages/admin/orders',
+            './src/pages/admin/offers',
+            './src/pages/admin/faq',
+            './src/pages/admin/home-sections',
+            './src/pages/admin/coupons'
+          ],
+        },
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop()?.replace('.tsx', '').replace('.ts', '')
+            : 'chunk';
+          return `assets/[name]-[hash].js`;
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 5173,

@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { PreloadLink as Link } from "@/components/PreloadLink";
 import { ShoppingBag, User, Menu, X, Leaf } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
 import { useGetMe, useListOffers, useListProducts } from "@/lib/api";
