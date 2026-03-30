@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/ProductCard";
 import { ArrowRight } from "lucide-react";
@@ -57,7 +57,7 @@ function AboutSection({ section, index }: HomeSectionProps) {
               </ul>
             )}
             {config.buttonText && config.buttonLink && (
-              <Link href={config.buttonLink}>
+              <Link to={config.buttonLink}>
                 <Button size="lg" className="rounded-xl px-8">{config.buttonText}</Button>
               </Link>
             )}
@@ -97,7 +97,7 @@ function FeaturedProductsSection({ section }: HomeSectionProps) {
             )}
           </div>
           {config.viewAllText && config.viewAllLink && (
-            <Link href={config.viewAllLink} className="hidden sm:flex items-center gap-2 font-medium text-primary hover:text-primary/80 transition-colors">
+            <Link to={config.viewAllLink} className="hidden sm:flex items-center gap-2 font-medium text-primary hover:text-primary/80 transition-colors">
               {config.viewAllText} <ArrowRight className="h-4 w-4" />
             </Link>
           )}
@@ -119,7 +119,7 @@ function FeaturedProductsSection({ section }: HomeSectionProps) {
         
         {config.viewAllText && config.viewAllLink && (
           <div className="mt-8 text-center sm:hidden">
-            <Link href={config.viewAllLink}>
+            <Link to={config.viewAllLink}>
               <Button variant="outline" className="w-full rounded-xl h-12">{config.viewAllText}</Button>
             </Link>
           </div>

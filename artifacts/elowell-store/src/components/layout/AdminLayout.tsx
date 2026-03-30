@@ -1,11 +1,12 @@
 import { ReactNode, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Package, ShoppingCart, Tag, Megaphone, HelpCircle, LogOut, ArrowLeft, Ticket, FolderOpen, Image, Info } from "lucide-react";
 import { useSessionStore, useApiOptions } from "@/store/session";
 import { useGetMe } from "@/lib/api";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
-  const [location, setLocation] = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, setUser, token, logout } = useSessionStore();
   const apiOpts = useApiOptions();
 
@@ -20,9 +21,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && (!token || (userData && userData.role !== 'admin'))) {
-      setLocation('/admin/login');
+      navigate('/admin/login');
     }
-  }, [isLoading, token, userData, setLocation]);
+  }, [isLoading, token, userData, navigate]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user || user.role !== 'admin') return null;
@@ -49,14 +50,13 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
-            const isActive = location === item.path;
             const Icon = item.icon;
             return (
               <Link 
                 key={item.path} 
-                href={item.path}
+                to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  isActive ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  location.pathname === item.path ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -66,12 +66,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="p-4 border-t border-border">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-muted-foreground hover:bg-muted transition-colors">
+          <Link to="/" className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-muted-foreground hover:bg-muted transition-colors">
             <ArrowLeft className="h-5 w-5" />
             Storefront
           </Link>
           <button 
-            onClick={() => { logout(); setLocation('/'); }}
+            onClick={() => { logout(); navigate('/'); }}
             className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-destructive hover:bg-destructive/10 transition-colors"
           >
             <LogOut className="h-5 w-5" />
@@ -84,7 +84,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-auto">
         <header className="h-20 bg-card border-b border-border flex items-center px-8 shadow-sm">
           <h1 className="text-2xl font-bold font-display text-foreground">
-            {navItems.find(i => i.path === location)?.name || 'Admin Panel'}
+            {navItems.find(i => i.path === location.pathname)?.name || 'Admin Panel'}
           </h1>
         </header>
         <div className="p-8">

@@ -1,7 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { BannerCarousel } from "@/components/BannerCarousel";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { ArrowRight, Leaf, ShieldCheck, Truck } from "lucide-react";
 import { useListProducts, useListCategories, useListHomeSections } from "@/lib/api";
 import { DynamicHomeSection } from "@/components/DynamicHomeSection";

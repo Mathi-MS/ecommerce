@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useListBanners } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function BannerCarousel() {
   const { data: banners, isLoading } = useListBanners({ active: true });
@@ -85,7 +85,7 @@ export function BannerCarousel() {
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   {banner.button1Text && banner.button1Link && (
-                    <Link href={banner.button1Link}>
+                    <Link to={banner.button1Link}>
                       <Button 
                         size="lg" 
                         className="rounded-full px-8 py-3 text-base font-semibold shadow-xl hover:shadow-2xl transition-all duration-300"
@@ -96,7 +96,7 @@ export function BannerCarousel() {
                   )}
                   
                   {banner.button2Text && banner.button2Link && (
-                    <Link href={banner.button2Link}>
+                    <Link to={banner.button2Link}>
                       <Button 
                         variant="outline" 
                         size="lg" 

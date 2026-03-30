@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,48 +31,40 @@ import AdminHomeSections from "./pages/admin/home-sections";
 
 const queryClient = new QueryClient();
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/products" component={ProductsIndex} />
-      <Route path="/products/:id" component={ProductDetail} />
-      <Route path="/cart" component={Cart} />
-      <Route path="/checkout" component={Checkout} />
-      <Route path="/auth" component={Auth} />
-      <Route path="/faq" component={Faq} />
-      <Route path="/order-success" component={OrderSuccess} />
-      <Route path="/orders" component={OrderHistory} />
-      <Route path="/orders-demo" component={OrdersDemo} />
-      
-      {/* Admin routes */}
-      <Route path="/admin">
-        {() => { window.location.replace("/admin/login"); return null; }}
-      </Route>
-      <Route path="/admin/login" component={Auth} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/products" component={AdminProducts} />
-      <Route path="/admin/categories" component={AdminCategories} />
-      <Route path="/admin/banners" component={AdminBanners} />
-      <Route path="/admin/home-sections" component={AdminHomeSections} />
-      <Route path="/admin/orders" component={AdminOrders} />
-      <Route path="/admin/offers" component={AdminOffers} />
-      <Route path="/admin/faq" component={AdminFaq} />
-      <Route path="/admin/coupons" component={AdminCoupons} />
-      <Route path="/admin/referrals" component={AdminDashboard} />
-
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={<ProductsIndex />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/orders" element={<OrderHistory />} />
+            <Route path="/orders-demo" element={<OrdersDemo />} />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+            <Route path="/admin/login" element={<Auth />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/banners" element={<AdminBanners />} />
+            <Route path="/admin/home-sections" element={<AdminHomeSections />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/offers" element={<AdminOffers />} />
+            <Route path="/admin/faq" element={<AdminFaq />} />
+            <Route path="/admin/coupons" element={<AdminCoupons />} />
+            <Route path="/admin/referrals" element={<AdminDashboard />} />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

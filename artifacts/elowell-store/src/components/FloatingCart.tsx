@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useGetCart } from "@/lib/api";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function FloatingCart() {
@@ -55,7 +55,7 @@ export function FloatingCart() {
             </div>
             
             <div className="mt-3 pt-2 border-t border-border">
-              <Link href="/cart">
+              <Link to="/cart">
                 <Button className="w-full rounded-xl cursor-pointer" size="sm">
                   Cart
                 </Button> 

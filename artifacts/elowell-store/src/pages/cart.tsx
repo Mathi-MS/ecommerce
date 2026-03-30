@@ -1,7 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useGetCart, useUpdateCartItem, useRemoveCartItem, useValidateReferralCode } from "@/lib/api";
 import { useSessionStore } from "@/store/session";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
@@ -9,7 +9,8 @@ import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CartPage() {
-  const [, setLocation] = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, cartSessionId } = useSessionStore();
   const { data: cart, isLoading, refetch } = useGetCart({ sessionId: cartSessionId });
   const updateMutation = useUpdateCartItem();
@@ -51,9 +52,9 @@ export default function CartPage() {
         description: "Please login to view your cart.",
         variant: "destructive"
       });
-      setLocation('/auth?redirect=' + encodeURIComponent('/cart'));
+      navigate('/auth?redirect=' + encodeURIComponent('/cart'));
     }
-  }, [user, setLocation, toast]);
+  }, [user, navigate, toast]);
 
   // Sync with server only on page unload or navigation
   const syncWithServer = async () => {
@@ -257,7 +258,7 @@ export default function CartPage() {
             </div>
             <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
             <p className="text-muted-foreground mb-8">Looks like you haven't added any natural goodness to your cart yet.</p>
-            <Link href="/products">
+            <Link to="/products">
               <Button size="lg" className="rounded-xl px-8">Continue Shopping</Button>
             </Link>
           </div>
@@ -271,7 +272,7 @@ export default function CartPage() {
                     <li key={item.id} className="p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                       <img src={item.productImage || 'https://via.placeholder.com/150'} alt={item.productName || 'Product'} className="w-24 h-24 rounded-xl object-cover bg-muted/50 border border-border/50 shrink-0" />
                       <div className="flex-1 text-center sm:text-left">
-                        <Link href={`/products/${item.productId}`} className="font-bold text-lg hover:text-primary transition-colors block mb-1">
+                        <Link to={`/products/${item.productId}`} className="font-bold text-lg hover:text-primary transition-colors block mb-1">
                           {item.productName || 'Product'}
                         </Link>
                         <div className="text-muted-foreground mb-4">
@@ -362,7 +363,7 @@ export default function CartPage() {
                   </Button>
                 </div>
 
-                <Link href="/checkout">
+                <Link to="/checkout">
                   <Button size="lg" className="w-full h-14 rounded-xl shadow-lg shadow-primary/25 gap-2 text-lg">
                     Checkout <ArrowRight className="h-5 w-5" />
                   </Button>

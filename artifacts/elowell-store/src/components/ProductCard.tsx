@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Star, ShoppingCart } from "lucide-react";
 import { Product, useAddToCart } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { motion } from "framer-motion";
 export function ProductCard({ product }: { product: Product }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, cartSessionId } = useSessionStore();
   const addToCartMutation = useAddToCart();
   
@@ -29,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
       });
       // Redirect to auth with current page as redirect parameter
       const currentPath = window.location.pathname;
-      setLocation(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
     
@@ -66,7 +67,7 @@ export function ProductCard({ product }: { product: Product }) {
   const imageSrc = product.images?.[0] || 'https://images.unsplash.com/photo-1611078449911-3771bd9a691b?w=800&q=80';
 
   return (
-    <Link href={`/products/${product.id}`} className="group block">
+    <Link to={`/products/${product.id}`} className="group block">
       <motion.div 
         whileHover={{ y: -4 }}
         className="bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:border-border transition-all duration-300 h-full flex flex-col"

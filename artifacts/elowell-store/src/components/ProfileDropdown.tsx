@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,7 +9,8 @@ import { useSessionStore } from "@/store/session";
 import { User, Edit, Package, Lock, LogOut, Eye, EyeOff } from "lucide-react";
 
 export function ProfileDropdown() {
-  const [, setLocation] = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user, setUser, logout } = useSessionStore();
   const [dialog, setDialog] = useState<"none" | "profile" | "password">("none");
@@ -101,13 +102,13 @@ export function ProfileDropdown() {
 
   const handleLogout = () => {
     logout();
-    setLocation("/");
+    navigate("/");
     toast({ title: "Success", description: "Logged out successfully" });
   };
 
   if (!user) {
     return (
-      <Button variant="ghost" onClick={() => setLocation("/auth")} className="flex items-center gap-2">
+      <Button variant="ghost" onClick={() => navigate("/auth")} className="flex items-center gap-2">
         <User className="h-4 w-4" />
         Sign In
       </Button>
@@ -131,7 +132,7 @@ export function ProfileDropdown() {
             <Edit className="mr-2 h-4 w-4" />
             Edit Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setLocation("/orders")}>
+          <DropdownMenuItem onClick={() => navigate("/orders")}>
             <Package className="mr-2 h-4 w-4" />
             Order History
           </DropdownMenuItem>

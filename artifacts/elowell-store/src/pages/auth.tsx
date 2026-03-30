@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,8 @@ declare global {
 }
 
 export default function AuthPage() {
-  const [, setLocation] = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { setUser, setToken } = useSessionStore();
   const [loading, setLoading] = useState(false);
@@ -109,7 +110,7 @@ export default function AuthPage() {
         
         // Redirect based on user role or intended page
         const redirectUrl = getRedirectUrl(data.user.role);
-        setLocation(redirectUrl);
+        navigate(redirectUrl);
       } else {
         console.error('Login failed:', data);
         toast({ title: "Error", description: data.error || 'Login failed', variant: "destructive" });

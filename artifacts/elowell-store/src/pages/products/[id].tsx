@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAddToCart } from "@/lib/api";
 import { Button } from "@/components/ui/button";

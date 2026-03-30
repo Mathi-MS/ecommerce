@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
         </p>
         
         <div className="space-y-4">
-          <Link href="/orders-demo">
+          <Link to="/orders-demo">
             <a className="block w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">
               View Orders Demo
             </a>

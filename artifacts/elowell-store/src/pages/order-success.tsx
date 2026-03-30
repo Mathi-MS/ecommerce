@@ -1,10 +1,10 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { CheckCircle2, Package, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function OrderSuccessPage() {
-  const [location] = useLocation();
+  const location = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const orderId = searchParams.get("id");
 
@@ -30,7 +30,7 @@ export default function OrderSuccessPage() {
           )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/products">
+            <Link to="/products">
               <Button className="rounded-xl w-full sm:w-auto h-12 px-8 shadow-md">
                 Continue Shopping
               </Button>

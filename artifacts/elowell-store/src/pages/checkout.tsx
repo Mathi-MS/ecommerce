@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSessionStore } from "@/store/session";
 import { useGetCart, useCreateOrder } from "@/lib/api";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,8 @@ export default function CheckoutPage() {
   const user = useSessionStore(s => s.user);
   const { data: cart, isLoading } = useGetCart({ sessionId: cartSessionId });
   const createOrder = useCreateOrder();
-  const [, setLocation] = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // Load Razorpay script
@@ -116,7 +117,7 @@ export default function CheckoutPage() {
 
             if (verifyResponse.ok) {
               toast({ title: "Payment Successful!", description: "Your order has been placed successfully." });
-              setLocation(`/order-success?id=${order.id}`);
+              navigate(`/order-success?id=${order.id}`);
             } else {
               throw new Error('Payment verification failed');
             }
@@ -149,7 +150,7 @@ export default function CheckoutPage() {
 
   if (isLoading) return <AppLayout><div className="min-h-[50vh] flex items-center justify-center">Loading checkout...</div></AppLayout>;
   if (!cart || cart.items.length === 0) {
-    setLocation('/cart');
+    navigate('/cart');
     return null;
   }
 
