@@ -203,7 +203,7 @@ export default function AdminProducts() {
               <p className="text-sm font-medium mb-2">Main Image (single)</p>
               <label className="flex items-center gap-3 cursor-pointer">
                 <div className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30">
-                  {form.mainImage ? <img src={`https://be-ecommerce-w2gz.onrender.com/${form.mainImage}`} className="w-full h-full object-cover" /> : <Plus className="h-6 w-6 text-muted-foreground" />}
+                  {form.mainImage ? <img src={`https://be-ecommerce-w2gz.onrender.com${form.mainImage}`} className="w-full h-full object-cover" /> : <Plus className="h-6 w-6 text-muted-foreground" />}
                 </div>
                 <span className="text-sm text-muted-foreground">Click to upload main image</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
@@ -216,7 +216,7 @@ export default function AdminProducts() {
               <div className="flex flex-wrap gap-3">
                 {form.images.map((img, idx) => (
                   <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
-                    <img src={`https://be-ecommerce-w2gz.onrender.com/${img}`} className="w-full h-full object-cover" />
+                    <img src={`https://be-ecommerce-w2gz.onrender.com${img}`} className="w-full h-full object-cover" />
                     <button type="button" onClick={() => removeProductImage(idx)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5"><X className="h-3 w-3 text-white" /></button>
                   </div>
                 ))}
