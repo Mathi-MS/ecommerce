@@ -301,25 +301,24 @@ export default function AdminBanners() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="order">Order</Label>
-                  <Input
-                    id="order"
-                    type="number"
-                    value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: e.target.value })}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="flex items-center space-x-2 pt-6">
-                  <Switch
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                  />
-                  <Label htmlFor="isActive">Active</Label>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="order">Display Order</Label>
+                <Input
+                  id="order"
+                  type="number"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                  placeholder="Enter display order (number)"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                />
+                <Label htmlFor="isActive">Active</Label>
               </div>
 
               <div className="flex gap-2 pt-4">

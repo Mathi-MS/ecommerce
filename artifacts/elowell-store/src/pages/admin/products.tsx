@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const QUERY_KEY = ["/api/products"];
 
-const EMPTY = { name: "", shortDescription: "", description: "", price: "", discountPrice: "", stock: "", order: "", mainImage: "", images: [] as string[], categoryIds: [] as string[], featured: false };
+const EMPTY = { name: "", shortDescription: "", description: "", price: "", discountPrice: "", stock: "", order: "", mainImage: "", images: [] as string[], categoryIds: [] as string[] };
 
 async function uploadImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -76,7 +76,6 @@ export default function AdminProducts() {
       stock: String(p.stock), order: String(p.order ?? ""),
       mainImage: p.mainImage || "", images: p.images || [],
       categoryIds: p.categoryIds || [],
-      featured: p.featured || false,
     });
     setError("");
     setDialog("form");
@@ -117,7 +116,7 @@ export default function AdminProducts() {
         name: form.name, shortDescription: form.shortDescription, description: form.description,
         price: Number(form.price), discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
         stock: Number(form.stock), order: Number(form.order) || 0,
-        mainImage: form.mainImage, images: form.images, featured: form.featured,
+        mainImage: form.mainImage, images: form.images,
         categoryIds: form.categoryIds,
       };
       const response = editing 
@@ -187,31 +186,15 @@ export default function AdminProducts() {
                 <Input id="sellingPrice" type="number" placeholder="0.00" step="0.01" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="stock">Stock Quantity</Label>
-                <Input id="stock" type="number" placeholder="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="order">Display Order</Label>
-                <Input id="order" type="number" placeholder="0" value={form.order} onChange={e => setForm(f => ({ ...f, order: e.target.value }))} />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="stock">Stock Quantity</Label>
+              <Input id="stock" type="number" placeholder="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="order">Display Order</Label>
+              <Input id="order" type="number" placeholder="Enter display order (number)" value={form.order} onChange={e => setForm(f => ({ ...f, order: e.target.value }))} />
             </div>
 
-            {/* Featured Toggle */}
-            <div className="space-y-2">
-              <Label>Product Settings</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="featured"
-                  checked={form.featured}
-                  onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))}
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="featured" className="text-sm font-normal cursor-pointer">Mark as Featured Product</Label>
-              </div>
-            </div>
 
             {/* Categories */}
             <div className="space-y-2">
@@ -331,15 +314,14 @@ export default function AdminProducts() {
               <th className="p-4 font-medium">Base Price</th>
               <th className="p-4 font-medium">Selling Price</th>
               <th className="p-4 font-medium">Stock</th>
-              <th className="p-4 font-medium">Featured</th>
               <th className="p-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              <tr><td colSpan={9} className="p-8 text-center">Loading...</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center">Loading...</td></tr>
             ) : products.length === 0 ? (
-              <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No products yet</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No products yet</td></tr>
             ) : (
               products.map((p: any) => (
                 <tr key={p.id} className="hover:bg-muted/30 transition-colors">
@@ -363,9 +345,6 @@ export default function AdminProducts() {
                   <td className="p-4">₹{p.price?.toFixed(2)}</td>
                   <td className="p-4">{p.discountPrice ? `₹${p.discountPrice.toFixed(2)}` : "—"}</td>
                   <td className="p-4">{p.stock}</td>
-                  <td className="p-4">
-                    {p.featured && <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />}
-                  </td>
                   <td className="p-4 text-right flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openView(p)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Edit className="h-4 w-4" /></Button>

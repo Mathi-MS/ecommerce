@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="aspect-square rounded-3xl overflow-hidden bg-muted/30 border border-border/50">
-              <img src={images[activeImage]} alt={product.name} className="w-full h-full object-cover object-center" />
+              <img src={`https://be-ecommerce-w2gz.onrender.com${images[activeImage]}`} alt={product.name} className="w-full h-full object-cover object-center" />
             </div>
             {images.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
@@ -101,7 +101,7 @@ export default function ProductDetailPage() {
                     onClick={() => setActiveImage(idx)}
                     className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-primary/50'}`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={`https://be-ecommerce-w2gz.onrender.com${img}`} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

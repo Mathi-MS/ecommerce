@@ -5,6 +5,15 @@ import jwt from "jsonwebtoken";
 const router: IRouter = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "elowell-secret-key-2024";
 
+async function reorderBanners() {
+  const banners = await Banner.find().sort({ order: 1 });
+  for (let i = 0; i < banners.length; i++) {
+    if (banners[i].order !== i + 1) {
+      await Banner.findByIdAndUpdate(banners[i]._id, { order: i + 1 });
+    }
+  }
+}
+
 // Middleware to check admin role
 function requireAdmin(req: Request, res: Response, next: any) {
   try {
@@ -91,6 +100,11 @@ router.post("/", requireAdmin, async (req: Request, res: Response) => {
       return;
     }
     
+    const pos = Number(order) || 1;
+    
+    // Shift existing banners down to make space for new banner at specified position
+    await Banner.updateMany({ order: { $gte: pos } }, { $inc: { order: 1 } });
+    
     const banner = await Banner.create({
       title,
       subtitle: subtitle || undefined,
@@ -100,9 +114,11 @@ router.post("/", requireAdmin, async (req: Request, res: Response) => {
       button1Link: button1Link || undefined,
       button2Text: button2Text || undefined,
       button2Link: button2Link || undefined,
-      order: Number(order) || 0,
+      order: pos,
       isActive: Boolean(isActive ?? true),
     });
+    
+    await reorderBanners();
     
     res.status(201).json({
       id: banner._id,
@@ -134,6 +150,30 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       return;
     }
     
+    // Handle order changes with proper repositioning
+    if (order !== undefined) {
+      const current = await Banner.findById(req.params.id);
+      if (current) {
+        const newPos = Number(order);
+        const oldPos = current.order;
+        if (newPos !== oldPos) {
+          if (newPos < oldPos) {
+            // Moving up: shift items down between new and old position
+            await Banner.updateMany(
+              { _id: { $ne: current._id }, order: { $gte: newPos, $lt: oldPos } },
+              { $inc: { order: 1 } }
+            );
+          } else {
+            // Moving down: shift items up between old and new position
+            await Banner.updateMany(
+              { _id: { $ne: current._id }, order: { $gt: oldPos, $lte: newPos } },
+              { $inc: { order: -1 } }
+            );
+          }
+        }
+      }
+    }
+    
     const banner = await Banner.findByIdAndUpdate(
       req.params.id,
       {
@@ -155,6 +195,8 @@ router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
       res.status(404).json({ error: "Banner not found" });
       return;
     }
+    
+    await reorderBanners();
     
     res.json({
       id: banner._id,
@@ -185,6 +227,8 @@ router.delete("/:id", requireAdmin, async (req: Request, res: Response) => {
       res.status(404).json({ error: "Banner not found" });
       return;
     }
+    
+    await reorderBanners();
     
     res.json({ message: "Banner deleted successfully" });
   } catch (err) {

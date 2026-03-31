@@ -528,27 +528,13 @@ export default function HomeSectionsAdmin() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="showFeatured"
-                        checked={formData.config.showFeatured !== false}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          config: { ...prev.config, showFeatured: e.target.checked }
-                        }))}
-                        className="rounded"
-                      />
-                      <Label htmlFor="showFeatured">Show only featured products</Label>
-                    </div>
-
                     {/* Product Selection */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Label>Select Specific Products (Optional)</Label>
-                        <span className="text-xs text-muted-foreground">
+                        {/* <span className="text-xs text-muted-foreground">
                           {formData.config.selectedProductIds?.length || 0}/4 selected
-                        </span>
+                        </span> */}
                       </div>
                       
                       <div className="max-h-48 overflow-y-auto border rounded-lg p-3 space-y-2">
@@ -558,12 +544,12 @@ export default function HomeSectionsAdmin() {
                           const canSelect = isSelected || selectedCount < 4;
                           
                           return (
-                            <div key={product.id} className={`flex items-center space-x-2 ${!canSelect ? 'opacity-50' : ''}`}>
+                            <div key={product.id} className={`flex items-center space-x-2`}>
                               <input
                                 type="checkbox"
                                 id={`product-${product.id}`}
                                 checked={isSelected}
-                                disabled={!canSelect}
+                                // disabled={!canSelect}
                                 onChange={(e) => {
                                   const currentIds = formData.config.selectedProductIds || [];
                                   const newIds = e.target.checked
@@ -578,7 +564,7 @@ export default function HomeSectionsAdmin() {
                               />
                               <label htmlFor={`product-${product.id}`} className={`flex items-center gap-2 cursor-pointer flex-1 ${!canSelect ? 'cursor-not-allowed' : ''}`}>
                                 <img 
-                                  src={product.mainImage || product.images?.[0]} 
+                                  src={`https://be-ecommerce-w2gz.onrender.com${product.mainImage || product.images?.[0]}`} 
                                   alt={product.name}
                                   className="w-8 h-8 rounded object-cover bg-muted"
                                 />

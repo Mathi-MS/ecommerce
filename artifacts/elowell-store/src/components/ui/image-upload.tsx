@@ -190,7 +190,7 @@ export function ImageUpload({
       />
       
       {/* URL input as fallback */}
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <Label className="text-xs text-muted-foreground">Or enter image URL</Label>
         <Input
           type="url"
@@ -199,7 +199,7 @@ export function ImageUpload({
           placeholder="https://example.com/image.jpg"
           disabled={isUploading}
         />
-      </div>
+      </div> */}
     </div>
   );
 }

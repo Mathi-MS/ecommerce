@@ -12,6 +12,15 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+async function reorderProducts() {
+  const products = await Product.find().sort({ order: 1 });
+  for (let i = 0; i < products.length; i++) {
+    if (products[i].order !== i + 1) {
+      await Product.findByIdAndUpdate(products[i]._id, { order: i + 1 });
+    }
+  }
+}
+
 async function mapProduct(p: any, categoryName?: string | null) {
   const reviews = await Review.find({ productId: p._id });
   const reviewCount = reviews.length;
@@ -41,7 +50,6 @@ async function mapProduct(p: any, categoryName?: string | null) {
     images: p.images,
     stock: p.stock,
     order: p.order ?? 0,
-    featured: p.featured,
     referralCode: coupon?.code ?? p.referralCode ?? null,
     averageRating,
     reviewCount,
@@ -68,7 +76,7 @@ router.post("/upload", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { category, featured, limit = 50, offset = 0, ids } = req.query;
+    const { category, limit = 50, offset = 0, ids } = req.query;
     const filter: any = {};
     
     // If specific IDs are requested, fetch those products
@@ -81,8 +89,6 @@ router.get("/", async (req: Request, res: Response) => {
         return;
       }
     }
-    
-    if (featured !== undefined) filter.featured = featured === "true";
     
     let products = await Product.find(filter).sort({ order: 1, createdAt: -1 }).skip(Number(offset)).limit(Number(limit)).populate("categoryId").populate("categoryIds");
     
@@ -113,8 +119,13 @@ router.get("/", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { name, description, shortDescription, price, discountPrice, categoryId, categoryIds, mainImage, images, stock, order, featured, referralCode } = req.body;
+    const { name, description, shortDescription, price, discountPrice, categoryId, categoryIds, mainImage, images, stock, order, referralCode } = req.body;
     const slug = slugify(name) + "-" + Date.now();
+    const pos = Number(order) || 1;
+    
+    // Shift existing products down to make space for new product at specified position
+    await Product.updateMany({ order: { $gte: pos } }, { $inc: { order: 1 } });
+    
     const product = await Product.create({
       name, slug, description, shortDescription,
       price: Number(price),
@@ -124,10 +135,11 @@ router.post("/", async (req: Request, res: Response) => {
       mainImage: mainImage || "",
       images: images || [],
       stock: Number(stock),
-      order: Number(order) || 0,
-      featured: Boolean(featured),
+      order: pos,
       referralCode: referralCode || undefined,
     });
+    
+    await reorderProducts();
     res.status(201).json(await mapProduct(product));
   } catch (err) {
     req.log.error({ err }, "Create product error");
@@ -157,7 +169,32 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     await connectDB();
-    const { name, description, shortDescription, price, discountPrice, categoryId, categoryIds, mainImage, images, stock, order, featured, referralCode } = req.body;
+    const { name, description, shortDescription, price, discountPrice, categoryId, categoryIds, mainImage, images, stock, order, referralCode } = req.body;
+    
+    // Handle order changes with proper repositioning
+    if (order !== undefined) {
+      const current = await Product.findById(req.params.id);
+      if (current) {
+        const newPos = Number(order);
+        const oldPos = current.order;
+        if (newPos !== oldPos) {
+          if (newPos < oldPos) {
+            // Moving up: shift items down between new and old position
+            await Product.updateMany(
+              { _id: { $ne: current._id }, order: { $gte: newPos, $lt: oldPos } },
+              { $inc: { order: 1 } }
+            );
+          } else {
+            // Moving down: shift items up between old and new position
+            await Product.updateMany(
+              { _id: { $ne: current._id }, order: { $gt: oldPos, $lte: newPos } },
+              { $inc: { order: -1 } }
+            );
+          }
+        }
+      }
+    }
+    
     const product = await Product.findByIdAndUpdate(req.params.id, {
       name, description, shortDescription,
       price: Number(price),
@@ -168,9 +205,10 @@ router.put("/:id", async (req: Request, res: Response) => {
       images: images || [],
       stock: Number(stock),
       order: Number(order) || 0,
-      featured: Boolean(featured),
       referralCode: referralCode || undefined,
     }, { new: true });
+    
+    await reorderProducts();
     res.json(await mapProduct(product));
   } catch (err) {
     req.log.error({ err }, "Update product error");
@@ -182,6 +220,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     await connectDB();
     await Product.findByIdAndDelete(req.params.id);
+    await reorderProducts();
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Delete product error");

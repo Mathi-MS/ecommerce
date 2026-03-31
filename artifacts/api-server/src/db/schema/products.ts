@@ -13,7 +13,6 @@ export interface IProduct extends Document {
   images: string[];
   stock: number;
   order: number;
-  featured: boolean;
   referralCode?: string;
   createdAt: Date;
 }
@@ -32,7 +31,7 @@ const productSchema = new Schema<IProduct>(
     images: { type: [String], default: [] },
     stock: { type: Number, default: 0 },
     order: { type: Number, default: 0 },
-    featured: { type: Boolean, default: false },
+
     referralCode: { type: String },
   },
   { timestamps: { createdAt: "createdAt", updatedAt: false } }

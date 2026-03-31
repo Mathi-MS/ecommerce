@@ -192,7 +192,7 @@ export default function AdminCategories() {
                   rows={3}
                 />
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="imageUrl">Image URL</Label>
                 <Input
                   id="imageUrl"
@@ -201,7 +201,7 @@ export default function AdminCategories() {
                   placeholder="Enter image URL"
                   type="url"
                 />
-              </div>
+              </div> */}
               <div className="flex gap-2 pt-4">
                 <Button
                   type="button"
@@ -260,7 +260,7 @@ export default function AdminCategories() {
                   <tr key={category.id} className="hover:bg-muted/30 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        {category.imageUrl ? (
+                        {/* {category.imageUrl ? (
                           <img
                             src={category.imageUrl}
                             alt={category.name}
@@ -270,7 +270,7 @@ export default function AdminCategories() {
                           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                             <FolderOpen className="h-5 w-5 text-muted-foreground" />
                           </div>
-                        )}
+                        )} */}
                         <div>
                           <div className="font-medium">{category.name}</div>
                         </div>
